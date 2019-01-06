@@ -52,23 +52,27 @@ parent = zeros(nrows,ncols);
 distances(start_node) = 0;
 
 % Main Loop
+drawEveryStep = false;
+current_list = [];
 while true
     
     % Draw current map
     map(start_node) = 5;
     map(dest_node) = 6;
     
-    image(1.5, 1.5, map);
-    grid on;
-    axis image;
-    drawnow;
-    
+    if drawEveryStep
+        image(1.5, 1.5, map);
+        grid on;
+        axis image;
+        drawnow;
+    end
+        
     % Find the node with the minimum distance
     [min_dist, current] = min(distances(:));
     
     if ((current == dest_node) || isinf(min_dist))
         break;
-    end;
+    end
     
     % Update map
     map(current) = 3;         % mark current node as visited
@@ -76,6 +80,7 @@ while true
     
     % Compute row, column coordinates of current node
     [i, j] = ind2sub(size(distances), current);
+    [i0, j0] = ind2sub(size(distances), start_node);
     
     % Visit each neighbor of the current node and update the map, distances
     % and parent tables appropriately.
@@ -83,6 +88,21 @@ while true
     %%% All of your code should be between the two lines of stars. 
     % *******************************************************************
     
+    current_list = [current_list, current]; % expand list of visited nodes in a grid
+    nbs = neighbours(map, current); % neighbour nodes
+    for k = 1:length(nbs) % for each neighbour
+        nb = nbs(k);
+        [nbi, nbj] = ind2sub(size(distances), nb);
+        ndist = abs(nbi-i0) + abs(nbj-j0); % dist from neighbour to start
+        current_dist = abs(i-i0) + abs(j-j0); % dist from current node to start
+        edge_length = 1;
+        if distances(nb) > current_dist + edge_length...
+                && sum( ismember(current_list,nb) ) == 0
+            distances(nb) = current_dist + edge_length;
+            parent(nb) = current;
+            map(nb) = 4;
+        end
+    end
     
     % *******************************************************************
 end

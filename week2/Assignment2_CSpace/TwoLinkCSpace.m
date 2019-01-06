@@ -2,6 +2,8 @@
 % TwoLinkRobotCSpace
 %
 
+clear;
+
 %% Draw Robot and obstacles
 figure(1);
 
@@ -79,13 +81,14 @@ figure(2);
 
 % You should experiment by changing these coordinates
 start_coords = [40, 80];
-end_coords = [100, 110];
+end_coords = [180, 180];
+% start_coords = [40, 80];
+% end_coords = [40, 160];
+
 
 % Find a route between the start and end nodes
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% YOU CAN COMMENT LINE 61-64 in the DijkstraTorus.m to compute the route
-% without drawing the map every iteration!
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+drawMapEveryTime = false;
+% route = DijkstraTorus (cspace, start_coords, end_coords, drawMapEveryTime);
 route = DijkstraTorus (cspace, start_coords, end_coords);
 
 %% Animate the route
