@@ -1,6 +1,8 @@
 function out = CollisionCheck (fv1, fv2)
 % Determine if two sets of triangular faces overlap
 
+addpath('../../week2/Assignment2_CSpace');
+
 n1 = size (fv1.faces, 1);
 n2 = size (fv2.faces, 1);
 

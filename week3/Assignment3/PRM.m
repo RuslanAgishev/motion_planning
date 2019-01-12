@@ -64,7 +64,26 @@ for i = 2:nsamples
     % you can forge an edge to any of these samples and update the edges,
     % edge_lengths and nedges variables accordingly.
     %
-    
+    [distances_sorted, i_sorted] = sort(distances);
+    if length(distances)>=k
+        k_dists = distances_sorted(1:k);
+        k_samples = samples(:,i_sorted(1:k));
+    else
+        k_dists = distances_sorted(1:length(distances));
+        k_samples = samples(:,i_sorted(1:length(distances)));
+    end
+    % using LocalPlanner to determine if edge could be constructed
+    % between pairs of x and each of the samples
+    for nb = 1:size(k_samples,2)
+        if LocalPlanner(x, k_samples(:,nb))
+%             edges(i*nb,:) = [i, nedges];
+%             edge_lengths(i*nb,1) = k_dists(nb);
+            nedges = nedges+1;
+            edges(nedges,:) = [i, i_sorted(nb)];
+            edge_lengths(nedges) = k_dists(nb);
+        end
+    end
+        
     fprintf (1, 'nsamples = %d, nedges = %d\n', i, nedges);
    
 end
