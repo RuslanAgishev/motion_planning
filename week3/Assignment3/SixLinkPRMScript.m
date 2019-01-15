@@ -37,7 +37,7 @@ patch (obstacle);
 
 %% Build roadmap
 
-nsamples = 200;
+nsamples = 10;
 neighbors = 5;
 
 roadmap = PRM (@()(RandomSampleSixLink(obstacle)), @DistSixLink, @(x,y)(LocalPlannerSixLink(x,y,obstacle)), nsamples, neighbors);

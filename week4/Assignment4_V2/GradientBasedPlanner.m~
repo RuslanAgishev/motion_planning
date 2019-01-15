@@ -17,17 +17,16 @@ function route = GradientBasedPlanner (f, start_coords, end_coords, max_its)
 route = [start_coords];
 for i=1:max_its
     current_point = route(end,:);
-     if sum( abs(current_point-end_coords) ) < 5.0
-         disp('Reached the goal !');
-         break
-     end
-    ix = round( current_point(2) );
-    iy = round( current_point(1) );
-    w = 10;
-    vx = mean( mean( gx(ix-w/2:ix+w/2, iy-w/2:iy+w/2) ) );
-    vy = mean( mean( gy(ix-w/2:ix+w/2, iy-w/2:iy+w/2) ) );
-    dt = 1 / norm([vx, vy]);
-    next_point = current_point + dt*[vx, vy];
+    dt = 1;
+    ix = round( current_point(1) );
+    iy = round( current_point(2) );
+    vx = gx(ix, iy);
+    vy = gy(ix, iy);
+%     w = 50;
+%     vx = mean( mean( gx(ix:ix+w, iy:iy+w) ) );
+%     vy = mean( mean( gy(ix:ix+w, iy:iy+w) ) );
+%     [vx, vy]
+    next_point = current_point + dt*[-vx, vy];
     route = vertcat(route, next_point);
 end
 
