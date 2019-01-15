@@ -93,8 +93,8 @@ axis equal;
 title ('Total Potential');
 
 %% Plan route
-% start = [50, 350]; % goal = [400, 50];
-start = [280, 350];
+start = [50, 350]; % goal = [400, 50];
+% start = [280, 350];
 
 route = GradientBasedPlanner (f, start, goal, 1000);
 

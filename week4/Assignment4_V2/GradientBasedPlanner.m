@@ -21,7 +21,7 @@ for i=1:max_its
          disp('Reached the goal !');
          break
      end
-    ix = round( current_point(2) );
+    ix = round( current_point(2) ); % X and Y axis are swaped
     iy = round( current_point(1) );
     w = 10;
     vx = mean( mean( gx(ix-w/2:ix+w/2, iy-w/2:iy+w/2) ) );
