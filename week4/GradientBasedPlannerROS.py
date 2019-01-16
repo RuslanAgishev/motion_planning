@@ -4,6 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 
+""" ROS """
+import time
+import rospy
+from geometry_msgs.msg import TransformStamped
+
+# import tf
+# from tf import TransformListener
 
 
 def GradientBasedPlanner (f, start_coords, end_coords, max_its):
@@ -34,7 +41,7 @@ def GradientBasedPlanner (f, start_coords, end_coords, max_its):
         iy = int(round( current_point[0] ));
         vx = gx[ix, iy]
         vy = gy[ix, iy]
-        dt = 1.0 / np.linalg.norm([vx, vy]);
+        dt = 1 / np.linalg.norm([vx, vy]);
         next_point = current_point + dt*np.array( [vx, vy] );
         route = np.vstack( [route, next_point] );
     route = route[1:,:]
@@ -90,17 +97,40 @@ start = meters2grid([-1.5, 0.5]); goal = meters2grid([1.5,-1]);
 # TODO: subscribe to Vicon obstacles topics in order to obtain real
 # obstacle coords
 
+def callback3(data):
+    global pose3
+    pose3 = [data.transform.translation.x, data.transform.translation.y]
 
-obstacles_poses = [[-2, 1], [1.5, 0.5], [0, 0], [-1.8, -1.8]] # 2D - coordinates [m]
-R_obstacles = 20;
+def callback4(data):
+    global pose4
+    pose4 = [data.transform.translation.x, data.transform.translation.y]
+
+
+rospy.init_node('motion_planning', anonymous=True)
+rospy.Subscriber("/vicon/obstacle3/obstacle3", TransformStamped, callback3)
+rospy.Subscriber("/vicon/obstacle4/obstacle4", TransformStamped, callback4)
+
+
+time.sleep(1)
+print('obstacle3', pose3) 
+print('obstacle4', pose4) 
+
+
+# obstacles_poses = [[-2, 1], [1.5, 0.5], [0, 0], [-1.8, -1.8]] # 2D - coordinates [m]
+obstacles_poses = [pose3, pose4] # 2D - coordinates [m]
+R_obstacles = 0.2; # [m]
 
 for pose in obstacles_poses:
 	pose = meters2grid(pose)
 	x0 = pose[0]; y0 = pose[1]
 	# cylindrical obstacles
-	t = ((x - x0)**2 + (y - y0)**2) < R_obstacles**2
+	t = ((x - x0)**2 + (y - y0)**2) < (100*R_obstacles)**2
 	obstacle[t] = True;
 
+
+# plt.figure(figsize=(10,10))
+# plt.imshow(obstacle, 'gray')
+# plt.title('Obstacles')
 
 """ Plan route """
 f = CombinedPotential(obstacle, goal)
@@ -123,13 +153,18 @@ skip = 10;
 [x_m, y_m] = np.meshgrid(np.linspace(-2.5, 2.5, ncols), np.linspace(-2.5, 2.5, nrows))
 start_m = grid2meters(start); goal_m = grid2meters(goal)
 plt.figure(figsize=(nrows/50, ncols/50))
+ax = plt.gca()
 Q = plt.quiver(x_m[::skip, ::skip], y_m[::skip, ::skip], gx[::skip, ::skip], gy[::skip, ::skip])
 plt.plot(start_m[0], start_m[1], 'ro', markersize=10);
 plt.plot(goal_m[0], goal_m[1], 'ro', color='green', markersize=10);
 plt.plot(route[:,0], route[:,1], linewidth=3);
 plt.xlabel('X')
 plt.ylabel('Y')
-
+# obstacles
+circle1 = plt.Circle(pose3, R_obstacles, color='yellow')
+ax.add_artist(circle1)
+circle2 = plt.Circle(pose4, R_obstacles, color='yellow')
+ax.add_artist(circle2)
 
 plt.show()
 
