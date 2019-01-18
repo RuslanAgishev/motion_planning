@@ -9,8 +9,8 @@ map = false(10);
 map (1:5, 6) = true;
 map (7, 6) = true;
 map (8, 1:2:6) = true;
-map (1:4, 2:3) = true;
-map ([7,9], 7:10) = true;
+% map (1:4, 2:3) = true;
+% map ([7,9], 7:10) = true;
 
 start_coords = [6, 2];
 dest_coords  = [8, 9];
