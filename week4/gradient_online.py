@@ -1,4 +1,4 @@
-# python3 GradientBasedPlanner.py
+# python3 gradient_online.py
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,8 +13,8 @@ from progress.bar import FillingCirclesBar
 animate = True
 max_its = 800
 random_map = 0
-num_random_obstacles = 6
-moving_obstacles = True
+num_random_obstacles = 4
+moving_obstacles = 0
 progress_bar = FillingCirclesBar('Simulation Progress', max=max_its)
 R_obstacles = 0.1 # [m]
 R_swarm     = 0.2 # [m]
@@ -52,10 +52,11 @@ def gradient_planner(f, current_point, end_coords):
     given current location, goal location and potential map, f
 	"""
     [gy, gx] = np.gradient(-f);
-    # ix = int( current_point[1] ); iy = int( current_point[0] );
     iy, ix = np.array( meters2grid(current_point), dtype=int )
-    vx = gx[ix, iy]; vy = gy[ix, iy]
-    dt = 0.05 / np.linalg.norm([vx, vy]);
+    w = 20 # smoothing window size for gradient-velocity
+    vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
+    vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])        
+    dt = 0.1 / np.linalg.norm([vx, vy]);
     next_point = current_point + dt*np.array( [vx, vy] );
 
     return next_point
@@ -70,6 +71,9 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
         # cylindrical obstacles
         t = ((x - x0)**2 + (y - y0)**2) < (100*R_obstacles)**2
         obstacles_map[t] = True;
+    # rectangular obstacles
+    obstacles_map[300:, 230:250] = True;
+    obstacles_map[130:150, :300] = True;
     """ Repulsive potential """
     goal = meters2grid(goal)
     d = bwdist(obstacles_map==0);
@@ -78,11 +82,9 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
     nu = 200;
     repulsive = nu*((1./d2 - 1/d0)**2);
     repulsive [d2 > d0] = 0;
-
     """ Attractive potential """
     xi = 1/700.;
     attractive = xi * ( (x - goal[0])**2 + (y - goal[1])**2 );
-
     """ Combine terms """
     f = attractive + repulsive;
     return f
@@ -91,10 +93,6 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
 
 
 start = np.array([-1.5, 0.5]); goal = np.array([1.5, -1.0]);
-
-# rectangular obstacles
-# obstacle [300:, 100:250] = True;
-# obstacle [150:200, 400:500] = True;
 
 if random_map:
     obstacles_poses = np.random.uniform(low=-2.5, high=2.5, size=(num_random_obstacles,2)) # randomly located obstacles 
@@ -109,10 +107,11 @@ route = start
 current_point = start
 for i in range(max_its):
     if moving_obstacles:
-        obstacles_poses[0][0] += 0.03; obstacles_poses[0][1] -= 0.02
-        obstacles_poses[1][0] -= 0.03; obstacles_poses[1][1] -= 0.01
-        obstacles_poses[2][0] -= 0.01; obstacles_poses[2][1] -= 0.01
-        obstacles_poses[3][0] += 0.03; obstacles_poses[3][1] += 0.03
+        dx = 0.03; dy = 0.03
+        obstacles_poses[0][0] += dx; obstacles_poses[0][1] -= dy
+        obstacles_poses[1][0] -= dx; obstacles_poses[1][1] -= dy
+        obstacles_poses[2][0] -= dx; obstacles_poses[2][1] -= dy
+        obstacles_poses[3][0] += dx; obstacles_poses[3][1] += dy
     f = combined_potential(obstacles_poses, goal, R_obstacles)
     [gy, gx] = np.gradient(-f);
     dist_to_goal = np.linalg.norm(current_point - goal)
