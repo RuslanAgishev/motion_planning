@@ -12,9 +12,9 @@ from progress.bar import FillingCirclesBar
 """ init """
 animate = True
 max_its = 800
-random_map = 0
+random_map = 1
 num_random_obstacles = 4
-moving_obstacles = 0
+moving_obstacles = 1
 progress_bar = FillingCirclesBar('Simulation Progress', max=max_its)
 R_obstacles = 0.1 # [m]
 R_swarm     = 0.2 # [m]
@@ -53,7 +53,7 @@ def gradient_planner(f, current_point, end_coords):
 	"""
     [gy, gx] = np.gradient(-f);
     iy, ix = np.array( meters2grid(current_point), dtype=int )
-    w = 20 # smoothing window size for gradient-velocity
+    w = 40 # smoothing window size for gradient-velocity
     vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
     vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])        
     dt = 0.1 / np.linalg.norm([vx, vy]);
@@ -93,11 +93,11 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
 
 
 start = np.array([-1.5, 0.5]); goal = np.array([1.5, -1.0]);
-
 if random_map:
     obstacles_poses = np.random.uniform(low=-2.5, high=2.5, size=(num_random_obstacles,2)) # randomly located obstacles 
 else:
     obstacles_poses = [[-2, 1], [1.5, 0.5], [0, 0], [-1.8, -1.8]] # 2D - coordinates [m]
+
 
 
 
@@ -107,7 +107,7 @@ route = start
 current_point = start
 for i in range(max_its):
     if moving_obstacles:
-        dx = 0.03; dy = 0.03
+        dx = 0.03;                   dy = 0.03
         obstacles_poses[0][0] += dx; obstacles_poses[0][1] -= dy
         obstacles_poses[1][0] -= dx; obstacles_poses[1][1] -= dy
         obstacles_poses[2][0] -= dx; obstacles_poses[2][1] -= dy
@@ -135,3 +135,7 @@ print('Done')
 progress_bar.finish()
 plt.show()
 
+
+# TODO: add 2 drones following a leader
+# change their positions according to leader's pose and velocity
+# and follow the leader
