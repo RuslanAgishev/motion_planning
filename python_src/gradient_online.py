@@ -5,6 +5,7 @@ import numpy as np
 from numpy.linalg import norm
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib import collections
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 from math import *
 import random
@@ -37,12 +38,20 @@ def draw_map(obstacles_poses, nrows=500, ncols=500):
     ax.add_patch(rect3)
     
 def draw_robots():
+    robots_poses = [next_point1, next_point2, next_point3, next_point4]
     plt.arrow(current_point1[0], current_point1[1], V[0], V[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
     plt.plot(route1[:,0], route1[:,1], 'green', linewidth=2)
-    plt.plot(route2[:,0], route2[:,1], '--', color='green', linewidth=2)
-    plt.plot(route3[:,0], route3[:,1], '--', color='green', linewidth=2)
-    triangle = plt.Polygon([next_point1, next_point2, next_point3], color='blue', fill=False, linewidth=2);
-    plt.gca().add_patch(triangle)
+    plt.plot(route2[:,0], route2[:,1], '--', color='blue', linewidth=2)
+    plt.plot(route3[:,0], route3[:,1], '--', color='blue', linewidth=2)
+    plt.plot(route4[:,0], route4[:,1], '--', color='blue', linewidth=2)
+    for pose in robots_poses:
+    	plt.plot(pose[0], pose[1], 'ro', color='blue')
+    # compute centroid and sort poses by polar angle
+    pp = robots_poses
+    cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
+    pp.sort(key=lambda p: atan2(p[1]-cent[1],p[0]-cent[0]))
+    formation = patches.Polygon(pp, color='blue', fill=False, linewidth=2);
+    plt.gca().add_patch(formation)
 
 def meters2grid(pose_m, nrows=500, ncols=500):
     # [0, 0](m) -> [250, 250]
@@ -126,16 +135,18 @@ def move_obstacles(obstacles_poses):
 animate = 1
 max_its = 200
 random_obstacles = 1
-num_random_obstacles = 6
+num_random_obstacles = 4
 moving_obstacles = 1
 progress_bar = FillingCirclesBar('Simulation Progress', max=max_its)
 R_obstacles = 0.1 # [m]
 R_swarm     = 0.3 # [m]
-start = np.array([-2.0, 2.0]); goal = np.array([1.5, -1.5])
+start = np.array([-1.8, 1.8]); goal = np.array([1.7, -1.7])
 V0 = (goal - start) / norm(goal-start)   # initial movement direction, |V0| = 1
 U0 = np.array([-V0[1], V0[0]]) / norm(V0) # perpendicular to initial movement direction, |U0|=1
 should_write_movie = 1; movie_file_name = 'output.avi'
 movie_writer = get_movie_writer(should_write_movie, 'Simulation Potential Fields', movie_fps=10., plot_pause_len=0.01)
+adaptive_velocity = 1
+
 
 if random_obstacles:
     obstacles_poses = np.random.uniform(low=-2.5, high=2.5, size=(num_random_obstacles,2)) # randomly located obstacles 
@@ -151,9 +162,10 @@ else:
 route1 = start 											# leader
 route2 = route1 - V0*(R_swarm*sqrt(3)/2) + U0*R_swarm/2 # follower
 route3 = route1 - V0*(R_swarm*sqrt(3)/2) - U0*R_swarm/2 # follower
+route4 = route1 - V0 * R_swarm*sqrt(3)                  # follower
+
 current_point1 = start
-next_point2 = route2
-next_point3 = route3
+
 
 fig = plt.figure(figsize=(10, 10))
 with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie else get_dummy_context_mgr():
@@ -165,29 +177,36 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         next_point1, V = gradient_planner(f, current_point1)
         U = np.array([-V[1], V[0]]) # vector, perpendicular to the movement direction
 
-        # scale_min * triangular formation < triangular formation < scale_max * triangular formation
-        # scale_min = 0.6; scale_max = 1.5
-        # if norm(V) < scale_min:
-        #     v = scale_min*V / norm(V); u = scale_min*U / norm(V)
-        # elif norm(V) > scale_max:
-        #     v = scale_max*V / norm(V); u = scale_max*U / norm(V)
-        # else:
-        #     v = V; u = U
-        v = V / norm(V); u = U / norm(U)
+        if adaptive_velocity:
+            # scale_min * triangular formation < triangular formation < scale_max * triangular formation
+            scale_min = 0.8; scale_max = 1.3
+            if norm(V) < scale_min:
+                v = scale_min*V / norm(V); u = scale_min*U / norm(V)
+            elif norm(V) > scale_max:
+                v = scale_max*V / norm(V); u = scale_max*U / norm(V)
+            else:
+                v = V; u = U
+        else:
+        	v = V / norm(V); u = U / norm(U)
 
-        # drones forming equilateral triangle
+        # drones formation
         des2 = next_point1 - v*R_swarm*sqrt(3)/2 + u*R_swarm/2 # follower
         des3 = next_point1 - v*R_swarm*sqrt(3)/2 - u*R_swarm/2 # follower
-
+        des4 = next_point1 - v*R_swarm*sqrt(3)				   # follower
+        # following drones are attracting to desired points - vertices of the triangle formation
         f2 = combined_potential(obstacles_poses, des2)
         next_point2, _ = gradient_planner(f2, des2)
 
         f3 = combined_potential(obstacles_poses, des3)
         next_point3, _ = gradient_planner(f3, des3)
 
+        f4 = combined_potential(obstacles_poses, des4)
+        next_point4, _ = gradient_planner(f3, des4)
+
         route1 = np.vstack([route1, next_point1])
         route2 = np.vstack([route2, next_point2])
         route3 = np.vstack([route3, next_point3])
+        route4 = np.vstack([route4, next_point4])
 
         current_point1 = next_point1
 
