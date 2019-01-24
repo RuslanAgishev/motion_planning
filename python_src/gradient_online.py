@@ -143,7 +143,7 @@ R_swarm     = 0.3 # [m]
 start = np.array([-1.8, 1.8]); goal = np.array([1.7, -1.7])
 V0 = (goal - start) / norm(goal-start)   # initial movement direction, |V0| = 1
 U0 = np.array([-V0[1], V0[0]]) / norm(V0) # perpendicular to initial movement direction, |U0|=1
-should_write_movie = 1; movie_file_name = 'output.avi'
+should_write_movie = 1; movie_file_name = 'videos/output.avi'
 movie_writer = get_movie_writer(should_write_movie, 'Simulation Potential Fields', movie_fps=10., plot_pause_len=0.01)
 adaptive_velocity = 1
 
