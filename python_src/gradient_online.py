@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 from math import *
+import random
 
 from progress.bar import FillingCirclesBar
 from tasks import get_movie_writer
@@ -14,18 +15,19 @@ from tasks import get_dummy_context_mgr
 
 
 
-def draw_map(R_obstacles, nrows=500, ncols=500):
+def draw_map(obstacles_map, nrows=500, ncols=500):
     skip = 10
     [x_m, y_m] = np.meshgrid(np.linspace(-2.5, 2.5, ncols), np.linspace(-2.5, 2.5, nrows))
     [gy, gx] = np.gradient(-f);
     Q = plt.quiver(x_m[::skip, ::skip], y_m[::skip, ::skip], gx[::skip, ::skip], gy[::skip, ::skip])
+    # plt.grid()
     plt.plot(start[0], start[1], 'ro', markersize=10);
     plt.plot(goal[0], goal[1], 'ro', color='green', markersize=10);
     plt.xlabel('X')
     plt.ylabel('Y')
     ax = plt.gca()
     for pose in obstacles_poses:
-        circle = plt.Circle(pose, R_obstacles, color='yellow')
+        circle = plt.Circle(pose, R_obstacles, color='red')
         ax.add_artist(circle)
     # Create a Rectangle patch
     # rect = patches.Rectangle((0.1,0.1),0.5,0.5,linewidth=1,edgecolor='r',fill='True')
@@ -33,10 +35,10 @@ def draw_map(R_obstacles, nrows=500, ncols=500):
 
 def draw_robots():
     plt.arrow(current_point[0], current_point[1], V[0], V[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
-    plt.plot(route1[:,0], route1[:,1], 'red', linewidth=2)
-    plt.plot(route2[:,0], route2[:,1], '--', linewidth=2)
-    plt.plot(route3[:,0], route3[:,1], '--', linewidth=2)
-    triangle = plt.Polygon([next_point1, next_point2, next_point3], color='green', fill=False, linewidth=2);
+    plt.plot(route1[:,0], route1[:,1], 'green', linewidth=2)
+    plt.plot(route2[:,0], route2[:,1], '--', color='green', linewidth=2)
+    plt.plot(route3[:,0], route3[:,1], '--', color='green', linewidth=2)
+    triangle = plt.Polygon([next_point1, next_point2, next_point3], color='blue', fill=False, linewidth=2);
     plt.gca().add_patch(triangle)
 
 def meters2grid(pose_m, nrows=500, ncols=500):
@@ -69,7 +71,24 @@ def gradient_planner(f, current_point, end_coords):
 
     return next_point, V
 
-def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500):
+def combined_potential(obstacles_map, goal, R_obstacles, nrows=500, ncols=500):
+    """ Repulsive potential """
+    goal = meters2grid(goal)
+    d = bwdist(obstacles_map==0);
+    d2 = (d/100.) + 1; # Rescale and transform distances
+    d0 = 2;
+    nu = 400;
+    repulsive = nu*((1./d2 - 1/d0)**2);
+    repulsive [d2 > d0] = 0;
+    """ Attractive potential """
+    [x, y] = np.meshgrid(np.arange(ncols), np.arange(nrows))
+    xi = 1/700.;
+    attractive = xi * ( (x - goal[0])**2 + (y - goal[1])**2 );
+    """ Combine terms """
+    f = attractive + repulsive;
+    return f
+
+def map(obstacles_poses, nrows=500, ncols=500):
     """ Obstacles map """
     obstacles_map = np.zeros((nrows, ncols));
     [x, y] = np.meshgrid(np.arange(ncols), np.arange(nrows))
@@ -78,31 +97,22 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
         x0 = pose[0]; y0 = pose[1]
         # cylindrical obstacles
         t = ((x - x0)**2 + (y - y0)**2) < (100*R_obstacles)**2
-        obstacles_map[t] = True;
+        obstacles_map[t] = 1;
     # rectangular obstacles
-    obstacles_map[350:, 130:150] = True;
-    obstacles_map[130:150, :300] = True;
-    """ Repulsive potential """
-    goal = meters2grid(goal)
-    d = bwdist(obstacles_map==0);
-    d2 = (d/100.) + 1; # Rescale and transform distances
-    d0 = 2;
-    nu = 200;
-    repulsive = nu*((1./d2 - 1/d0)**2);
-    repulsive [d2 > d0] = 0;
-    """ Attractive potential """
-    xi = 1/1000.;
-    attractive = xi * ( (x - goal[0])**2 + (y - goal[1])**2 );
-    """ Combine terms """
-    f = attractive + repulsive;
-    return f
+    # obstacles_map[350:, 130:150] = 1;
+    # obstacles_map[130:150, :300] = 1;
+    return obstacles_map
 
 def move_obstacles(obstacles_poses):
-    dx = 0.01;                   dy = 0.01
-    obstacles_poses[0][0] += dx; obstacles_poses[0][1] -= dy
-    obstacles_poses[1][0] -= dx; obstacles_poses[1][1] -= dy
-    obstacles_poses[2][0] -= dx; obstacles_poses[2][1] -= dy
-    obstacles_poses[3][0] += dx; obstacles_poses[3][1] += dy
+    # dx = 0.01;                   dy = 0.01
+    # obstacles_poses[0][0] += dx; obstacles_poses[0][1] -= dy
+    # obstacles_poses[1][0] -= dx; obstacles_poses[1][1] -= dy
+    # obstacles_poses[2][0] -= dx; obstacles_poses[2][1] -= dy
+    # obstacles_poses[3][0] += dx; obstacles_poses[3][1] += dy
+    """ obstacles tend to go to the origin, (0,0) - point """
+    for pose in obstacles_poses:
+    	dx = random.uniform(0, 0.03); dy = random.uniform(0,0.03);
+    	pose[0] -= np.sign(pose[0])*dx;      pose[1] -= np.sign(pose[1])*dy;
     return obstacles_poses
 
 
@@ -110,19 +120,19 @@ def move_obstacles(obstacles_poses):
 """ initialization """
 animate = 1
 max_its = 100
-random_map = 1
-num_random_obstacles = 7
+random_obstacles = 1
+num_random_obstacles = 8
 moving_obstacles = 1
 progress_bar = FillingCirclesBar('Simulation Progress', max=max_its)
 R_obstacles = 0.1 # [m]
-R_swarm     = 0.2 # [m]
-start = np.array([-2.0, 2.0]); goal = np.array([2.0, -2.0])
+R_swarm     = 0.3 # [m]
+start = np.array([-2.0, 2.0]); goal = np.array([1.5, -1.5])
 V0 = (goal - start) / norm(goal-start)   # initial movement direction, |V0| = 1
 U0 = np.array([-V0[1], V0[0]]) / norm(V0) # perpendicular to initial movement direction, |U0|=1
 should_write_movie = 0; movie_file_name = 'output.avi'
 movie_writer = get_movie_writer(should_write_movie, 'Simulation Potential Fields', movie_fps=10., plot_pause_len=0.01)
 
-if random_map:
+if random_obstacles:
     obstacles_poses = np.random.uniform(low=-2.5, high=2.5, size=(num_random_obstacles,2)) # randomly located obstacles 
 else:
     obstacles_poses = [[-2, 1], [1.5, 0.5], [0, 0], [-1.8, -1.8]] # 2D - coordinates [m]
@@ -131,25 +141,28 @@ else:
 
 
 """ Plan route: centroid path """
-fig = plt.figure(figsize=(10, 10))
+
 # drones forming equilateral triangle
-route1 = start # leader
+route1 = start 											# leader
 route2 = route1 - V0*(R_swarm*sqrt(3)/2) + U0*R_swarm/2 # follower
 route3 = route1 - V0*(R_swarm*sqrt(3)/2) - U0*R_swarm/2 # follower
 current_point = start
 
+fig = plt.figure(figsize=(10, 10))
 with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie else get_dummy_context_mgr():
     for i in range(max_its):
         if moving_obstacles: obstacles_poses = move_obstacles(obstacles_poses)
 
-        f = combined_potential(obstacles_poses, goal, R_obstacles)
-        dist_to_goal = norm(current_point - goal)
-        if dist_to_goal < 0.1:
-            print('\nReached the goal')
-            break
-        # drones forming equilateral triangle
-        next_point1, V = gradient_planner(f, current_point, goal)
-        U = np.array([-V[1], V[0]]) # perpendicular to the movement direction
+
+
+
+        obstacles_map = map(obstacles_poses)
+        f = combined_potential(obstacles_map, goal, R_obstacles)
+        next_point1, V = gradient_planner(f, current_point, goal)     # leader
+
+
+        U = np.array([-V[1], V[0]]) 								  # perpendicular to the movement direction
+
         # scale_min * triangular formation < triangular formation < scale_max * triangular formation
         scale_min = 0.6; scale_max = 1.5
         if norm(V) < scale_min:
@@ -158,6 +171,8 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
             v = scale_max*V / norm(V); u = scale_max*U / norm(V)
         else:
             v = V; u = U
+
+        # drones forming equilateral triangle
         next_point2 = next_point1 - v*R_swarm*sqrt(3)/2 + u*R_swarm/2 # follower
         next_point3 = next_point1 - v*R_swarm*sqrt(3)/2 - u*R_swarm/2 # follower
 
@@ -167,16 +182,24 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
 
         current_point = next_point1
 
+        dist_to_goal = norm(current_point - goal)
+        if dist_to_goal < 0.1:
+            print('\nReached the goal')
+            break
+
+
+
         progress_bar.next()
         plt.cla()
-        draw_map(R_obstacles)
+
+        draw_map(obstacles_map)
         draw_robots()
         if animate:
             plt.draw()
             plt.pause(0.01)
 
         if should_write_movie:
-                movie_writer.grab_frame()
+            movie_writer.grab_frame()
 
     print('\nDone')
     progress_bar.finish()
