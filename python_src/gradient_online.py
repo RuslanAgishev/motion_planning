@@ -44,10 +44,10 @@ def draw_map(f, obstacles_poses, draw_gradients=True, nrows=500, ncols=500):
     
 def draw_robots():
     plt.arrow(current_point1[0], current_point1[1], V[0], V[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
-    plt.plot(route1[:,0], route1[:,1], 'green', linewidth=2)
-    plt.plot(route2[:,0], route2[:,1], '--', color='blue', linewidth=2)
-    plt.plot(route3[:,0], route3[:,1], '--', color='blue', linewidth=2)
-    plt.plot(route4[:,0], route4[:,1], '--', color='blue', linewidth=2)
+    plt.plot(routes[0][:,0], routes[0][:,1], 'green', linewidth=2)
+    for r in range(num_robots):
+        plt.plot(routes[r][:,0], routes[r][:,1], '--', color='blue', linewidth=2)
+
     for pose in robots_poses:
     	plt.plot(pose[0], pose[1], 'ro', color='blue')
     # compute centroid and sort poses by polar angle
@@ -145,22 +145,28 @@ def adapt_vel(V,scale_min=0.8, scale_max=1.3):
         v = V; u = U
     return v, u
 
-def formation(leader_des, v, R_swarm):
+def formation(num_robots, leader_des, v, R_swarm):
+    if num_robots<=1: return []
     u = np.array([-v[1], v[0]])
+    des4 = leader_des - v*R_swarm*sqrt(3)                 # follower
+    if num_robots==2: return [des4]
     des2 = leader_des - v*R_swarm*sqrt(3)/2 + u*R_swarm/2 # follower
     des3 = leader_des - v*R_swarm*sqrt(3)/2 - u*R_swarm/2 # follower
-    des4 = leader_des - v*R_swarm*sqrt(3)                 # follower
+    if num_robots==3: return [des2, des3]
+    
     return [des2, des3, des4]
 
 """ initialization """
-animate              = 1
-max_its              = 300
-random_obstacles     = 0
-num_random_obstacles = 4
-moving_obstacles     = 1
-adaptive_velocity    = 0
-impedance            = 1
-formation_gradient   = 1
+animate              = 1   # show 1-each frame or 0-just final configuration
+max_its              = 300 # max number of allowed iters for formation to reach the goal
+random_obstacles     = 1   # randomly distributed obstacles on the map
+num_random_obstacles = 4   # number of random circular obstacles on the map
+num_robots           = 4   # number of drones in formation
+moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
+adaptive_velocity    = 0   # look at adapt_vel function: change area proportionally to leader's velocity
+impedance            = 1   # impedance links between the leader and followers (leader's velocity)
+formation_gradient   = 1   # followers are attracted to their formation position
+draw_gradients       = 1   # 1-gradients plot, 0-grid
 
 progress_bar = FillingCirclesBar('Number of Iterations', max=max_its)
 should_write_movie = 0; movie_file_name = 'videos/output.avi'
@@ -185,18 +191,20 @@ else:
 
 """ Plan route: centroid path """
 
-# drones forming equilateral triangle
+# drones polygonal formation
 route1 = start # leader
-[route2, route3, route4] = formation(start, V0, R_swarm)
-
 current_point1 = start
+robots_poses = [start] + formation(num_robots, start, V0, R_swarm)
+routes = [route1] + robots_poses[1:]
+centroid_route = [ sum([p[0] for p in robots_poses])/len(robots_poses), sum([p[1] for p in robots_poses])/len(robots_poses) ]
+des_poses = robots_poses
 
 fig = plt.figure(figsize=(10, 10))
 with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie else get_dummy_context_mgr():
     for i in range(max_its):
         if moving_obstacles: obstacles_poses = move_obstacles(obstacles_poses)
 
-        des1, f, V = gradient_planner(obstacles_poses, goal, current_point1)
+        des_poses[0], f, V = gradient_planner(obstacles_poses, goal, current_point1)
         U = np.array([-V[1], V[0]]) # vector, perpendicular to the movement direction
         if adaptive_velocity:
             v, u = adapt_vel(V)
@@ -204,7 +212,7 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         	v = V / norm(V); u = U / norm(U)
 
         # drones polygonal formation
-        [des2, des3, des4] = formation(des1, v, R_swarm)
+        des_poses[1:] = formation(num_robots, des_poses[0], v, R_swarm)
 
         if impedance:
             # drones positions are corrected according to the impedance model
@@ -213,26 +221,27 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
             imp_pose_prev = imp_pose
             imp_vel_prev = imp_vel
 
-            des1 += 0.1*imp_pose
-            des2 += 0.2*imp_pose
-            des3 += 0.2*imp_pose
-            des4 += 0.5*imp_pose
+            des_poses[0] += 0.1  * imp_pose
+            if num_robots==2:
+                des_poses[1] += 0.05 * imp_pose @ u/norm(u) *u/norm(u) # impedance correction term is projected in u-vector direction
+            if num_robots==3:
+                des_poses[2] += 0.05 * imp_pose @ u/norm(u) *u/norm(u) # u-vector direction
+            if num_robots==4:
+                des_poses[3] -= 0.05 * imp_pose @ v/norm(v) *v/norm(v) # v-vector direction
 
         if formation_gradient:
             # following drones are attracting to desired points - vertices of the polygonal formation
-            des2, f2, _ = gradient_planner(obstacles_poses, des2, des2)
-            des3, f3, _ = gradient_planner(obstacles_poses, des3, des3)
-            des4, f3, _ = gradient_planner(obstacles_poses, des3, des4)
+            for p in range(1,num_robots):
+                des_poses[p], _, _ = gradient_planner(obstacles_poses, des_poses[p], des_poses[p])
 
-        route1 = np.vstack([route1, des1])
-        route2 = np.vstack([route2, des2])
-        route3 = np.vstack([route3, des3])
-        route4 = np.vstack([route4, des4])
+        for r in range(num_robots):
+            routes[r] = np.vstack([routes[r], des_poses[r]])
 
-        current_point1 = des1 # update current point of the leader
+        current_point1 = des_poses[0] # update current point of the leader
 
-        robots_poses = [des1, des2, des3, des4]
-        centroid = (sum([p[0] for p in robots_poses])/len(robots_poses), sum([p[1] for p in robots_poses])/len(robots_poses))
+        pp = des_poses
+        centroid = [ sum([p[0] for p in pp])/len(pp), sum([p[1] for p in pp])/len(pp) ]
+        centroid_route = np.vstack([centroid_route, centroid])
         dist_to_goal = norm(centroid - goal)
         if dist_to_goal < R_swarm:
             print('\nReached the goal')
@@ -241,7 +250,7 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         progress_bar.next()
         plt.cla()
 
-        draw_map(f, obstacles_poses, draw_gradients=False)
+        draw_map(f, obstacles_poses, draw_gradients=draw_gradients)
         draw_robots()
         if animate:
             plt.draw()
@@ -255,8 +264,10 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
     plt.show()
 
 # plt.figure()
-# plt.plot(route)
-
+# plt.title("Centroid's trajectory")
+# plt.plot(centroid_route[:,0], centroid_route[:,1])
+# plt.grid()
+# plt.show()
 
 # TODO:
 # local minimum problem (FM2 - algorithm: https://pythonhosted.org/scikit-fmm/)
