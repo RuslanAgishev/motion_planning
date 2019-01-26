@@ -60,9 +60,13 @@ def gradient_planner(f, current_point, end_coords):
 	"""
     [gy, gx] = np.gradient(-f);
     iy, ix = np.array( meters2grid(current_point), dtype=int )
-    w = 80 # smoothing window size for gradient-velocity
-    vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
-    vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
+    w = 40 # smoothing window size for gradient-velocity
+    try:
+        vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
+        vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
+    except:
+        vx = gx[ix,iy]
+        vy = gy[ix,iy]
     V = np.array([vx, vy])
     dt = 0.1 / norm(V);
     next_point = current_point + dt*np.array( [vx, vy] );
@@ -98,7 +102,7 @@ def combined_potential(obstacles_poses, goal, R_obstacles, nrows=500, ncols=500)
     return f
 
 def move_obstacles(obstacles_poses):
-    dx = 0.01;                   dy = 0.01
+    dx = 0.03;                   dy = 0.03
     obstacles_poses[0][0] += dx; obstacles_poses[0][1] -= dy
     obstacles_poses[1][0] -= dx; obstacles_poses[1][1] -= dy
     obstacles_poses[2][0] -= dx; obstacles_poses[2][1] -= dy
@@ -110,8 +114,8 @@ def move_obstacles(obstacles_poses):
 """ initialization """
 animate = 1
 max_its = 100
-random_map = 1
-num_random_obstacles = 7
+random_map = 0
+num_random_obstacles = 10
 moving_obstacles = 1
 progress_bar = FillingCirclesBar('Simulation Progress', max=max_its)
 R_obstacles = 0.1 # [m]
@@ -151,7 +155,7 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         next_point1, V = gradient_planner(f, current_point, goal)
         U = np.array([-V[1], V[0]]) # perpendicular to the movement direction
         # scale_min * triangular formation < triangular formation < scale_max * triangular formation
-        scale_min = 0.6; scale_max = 1.5
+        scale_min = 1.0; scale_max = 1.8
         if norm(V) < scale_min:
             v = scale_min*V / norm(V); u = scale_min*U / norm(V)
         elif norm(V) > scale_max:
