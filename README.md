@@ -11,7 +11,9 @@ Python code that is aimed to apply path planning algorithms for real mobile robo
 In order to launch the algorithms:
 
 python3 gradient_online.py
+
 python3 GradientBasedPlanner.py
+
 jupyter-notebook GradientBasedPlanning.ipynb
 
 - Real time potential fields-based obstacle avoidance method with moving or static obstacles.

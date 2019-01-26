@@ -1,0 +1,5 @@
+scikit_fmm==0.0.9
+progress==1.4
+matplotlib==3.0.2
+numpy==1.11.0
+scipy==1.2.0
