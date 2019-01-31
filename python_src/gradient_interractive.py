@@ -1,5 +1,5 @@
 # In order to launch execute:
-# python3 gradient_online.py
+# python3 gradient_interractive.py
 
 import numpy as np
 from numpy.linalg import norm
@@ -84,7 +84,7 @@ def gradient_planner(obstacles_poses, goal, current_point, ncols=500, nrows=500)
     vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
     V = np.array([vx, vy])
     dt = 0.1 / norm(V);
-    next_point = current_point + dt*np.array( [vx, vy] );
+    next_point = current_point + dt*V;
 
     return next_point, f, V
 
@@ -157,12 +157,12 @@ def formation(num_robots, leader_des, v, R_swarm):
     return [des2, des3, des4]
 
 """ initialization """
-animate              = 1   # show 1-each frame or 0-just final configuration
+animate              = 0   # show 1-each frame or 0-just final configuration
 max_its              = 300 # max number of allowed iters for formation to reach the goal
 random_obstacles     = 1   # randomly distributed obstacles on the map
 num_random_obstacles = 4   # number of random circular obstacles on the map
 num_robots           = 4   # number of drones in formation
-moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
+moving_obstacles     = 0   # 0-static or 1-dynamic obstacles
 adaptive_velocity    = 0   # look at adapt_vel function: change area proportionally to leader's velocity
 impedance            = 1   # impedance links between the leader and followers (leader's velocity)
 formation_gradient   = 1   # followers are attracted to their formation position
@@ -212,7 +212,8 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         	v = V / norm(V); u = U / norm(U)
 
         # drones polygonal formation
-        des_poses[1:] = formation(num_robots, des_poses[0], v, R_swarm)
+        direction = ( goal - des_poses[0] ) / norm(goal - des_poses[0])
+        des_poses[1:] = formation(num_robots, des_poses[0], direction, R_swarm)
 
         if impedance:
             # drones positions are corrected according to the impedance model
@@ -243,7 +244,7 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         centroid = [ sum([p[0] for p in pp])/len(pp), sum([p[1] for p in pp])/len(pp) ]
         centroid_route = np.vstack([centroid_route, centroid])
         dist_to_goal = norm(centroid - goal)
-        if dist_to_goal < R_swarm:
+        if dist_to_goal < 1.2*R_swarm:
             print('\nReached the goal')
             break
 
