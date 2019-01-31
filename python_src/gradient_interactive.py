@@ -1,5 +1,5 @@
 # In order to launch execute:
-# python3 gradient_interractive.py
+# python3 gradient_interactive.py
 
 import numpy as np
 from numpy.linalg import norm
@@ -13,13 +13,16 @@ from impedance import *
 import time
 
 from progress.bar import FillingCirclesBar
-from tasks import get_movie_writer
-from tasks import get_dummy_context_mgr
+from tasks import *
 from threading import Thread
 
+""" ROS """
+import rospy
+from geometry_msgs.msg import TransformStamped
 
-def draw_map(f, obstacles_poses, draw_gradients=True, nrows=500, ncols=500):
-    if draw_gradients:
+
+def draw_map(obstacles_poses, f=None, draw_gradients=True, nrows=500, ncols=500):
+    if draw_gradients and f is not None:
         skip = 10
         [x_m, y_m] = np.meshgrid(np.linspace(-2.5, 2.5, ncols), np.linspace(-2.5, 2.5, nrows))
         [gy, gx] = np.gradient(-f);
@@ -42,10 +45,10 @@ def draw_map(f, obstacles_poses, draw_gradients=True, nrows=500, ncols=500):
     ax.add_patch(rect2)
     ax.add_patch(rect3)
     
-def draw_robots():
-    plt.arrow(current_point1[0], current_point1[1], V[0], V[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
+def draw_robots(current_point1, routes=None, num_robots=None, robots_poses=None, centroid=None, vel1=None):
+    if vel1 is not None: plt.arrow(current_point1[0], current_point1[1], vel1[0], vel1[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
     plt.plot(routes[0][:,0], routes[0][:,1], 'green', linewidth=2)
-    for r in range(num_robots):
+    for r in range(1,num_robots):
         plt.plot(routes[r][:,0], routes[r][:,1], '--', color='blue', linewidth=2)
 
     for pose in robots_poses:
@@ -70,13 +73,12 @@ def grid2meters(pose_grid, nrows=500, ncols=500):
     pose_meters = ( np.array(pose_grid) - np.array([ncols/2, nrows/2]) ) / 100.0
     return pose_meters
 
-def gradient_planner(obstacles_poses, goal, current_point, ncols=500, nrows=500):
+def gradient_planner(f, current_point, ncols=500, nrows=500):
     """
     GradientBasedPlanner : This function computes the next_point
     given current location, goal location and potential map, f.
     It also returns mean velocity, V, of the gradient map in current point.
     """
-    f = combined_potential(obstacles_poses, goal)
     [gy, gx] = np.gradient(-f);
     iy, ix = np.array( meters2grid(current_point), dtype=int )
     w = 40 # smoothing window size for gradient-velocity
@@ -86,7 +88,7 @@ def gradient_planner(obstacles_poses, goal, current_point, ncols=500, nrows=500)
     dt = 0.1 / norm(V);
     next_point = current_point + dt*V;
 
-    return next_point, f, V
+    return next_point, V
 
 def combined_potential(obstacles_poses, goal, nrows=500, ncols=500):
     """ Repulsive potential """
@@ -135,15 +137,6 @@ def move_obstacles(obstacles_poses):
 
     return obstacles_poses
 
-def adapt_vel(V,scale_min=0.8, scale_max=1.3):
-    # scale_min * triangular formation < triangular formation < scale_max * triangular formation
-    if norm(V) < scale_min:
-        v = scale_min*V / norm(V); u = scale_min*U / norm(V)
-    elif norm(V) > scale_max:
-        v = scale_max*V / norm(V); u = scale_max*U / norm(V)
-    else:
-        v = V; u = U
-    return v, u
 
 def formation(num_robots, leader_des, v, R_swarm):
     if num_robots<=1: return []
@@ -157,16 +150,21 @@ def formation(num_robots, leader_des, v, R_swarm):
     return [des2, des3, des4]
 
 """ initialization """
-animate              = 0   # show 1-each frame or 0-just final configuration
-max_its              = 300 # max number of allowed iters for formation to reach the goal
+animate              = 1   # show 1-each frame or 0-just final configuration
 random_obstacles     = 1   # randomly distributed obstacles on the map
-num_random_obstacles = 4   # number of random circular obstacles on the map
+num_random_obstacles = 8   # number of random circular obstacles on the map
 num_robots           = 4   # number of drones in formation
-moving_obstacles     = 0   # 0-static or 1-dynamic obstacles
-adaptive_velocity    = 0   # look at adapt_vel function: change area proportionally to leader's velocity
+moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
 impedance            = 1   # impedance links between the leader and followers (leader's velocity)
-formation_gradient   = 1   # followers are attracted to their formation position
+formation_gradient   = 1   # followers are attracting to their formation position and repelling from obstacles
 draw_gradients       = 1   # 1-gradients plot, 0-grid
+""" human guided swarm params """
+interactive          = 0      # 1-human guided swarm, 0-potential fields as a planner to goal pose
+human_name           = 'palm' # vicon mocap object
+pos_coef             = 3.0    # scale of the leader's movement relatively to the human operator
+initialized          = False  # is always inits with False: for relative position control
+max_its              = 1000 if interactive else 300 # max number of allowed iters for formation to reach the goal
+
 
 progress_bar = FillingCirclesBar('Number of Iterations', max=max_its)
 should_write_movie = 0; movie_file_name = 'videos/output.avi'
@@ -187,9 +185,18 @@ else:
     obstacles_poses = np.array([[-2, 1], [1.5, 0.5], [-1.0, 1.5], [0, 0], [1, -2], [-1.8, -1.8]]) # 2D - coordinates [m]
 
 
+def human_pos_callback(data):
+    global human_pose
+    global human_yaw
+    human_pose = np.array( [data.transform.translation.x, data.transform.translation.y, data.transform.translation.z] )
+    # human_yaw  = np.array( [data.transform.rotation.x, data.transform.rotation.y, data.transform.rotation.z, data.transform.rotation.w] )
+
+rospy.init_node('gradient_interactive', anonymous=True)
+pos_sub = rospy.Subscriber('/vicon/' + human_name + '/' + human_name, TransformStamped, human_pos_callback)
+time.sleep(1)
 
 
-""" Plan route: centroid path """
+""" Main loop """
 
 # drones polygonal formation
 route1 = start # leader
@@ -202,38 +209,53 @@ des_poses = robots_poses
 fig = plt.figure(figsize=(10, 10))
 with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie else get_dummy_context_mgr():
     for i in range(max_its):
+        # TODO: make random start and goal points for obstales, not (0,0) for all
         if moving_obstacles: obstacles_poses = move_obstacles(obstacles_poses)
 
-        des_poses[0], f, V = gradient_planner(obstacles_poses, goal, current_point1)
-        U = np.array([-V[1], V[0]]) # vector, perpendicular to the movement direction
-        if adaptive_velocity:
-            v, u = adapt_vel(V)
+        """ Leader's pose update """
+        if interactive:
+            f1 = combined_potential(obstacles_poses, current_point1)
+            # human palm pose and velocity using Vicon motion capture
+            if not initialized:
+                human_pose_init = human_pose[:2]
+                drone1_pose_init = start
+                initialized = True
+            dx, dy = human_pose[:2] - human_pose_init
+            des_poses[0] = np.array([  drone1_pose_init[0] + pos_coef*dx, drone1_pose_init[1] + pos_coef*dy ])
+            vel1 = hum_vel(human_pose)
+            # TODO: implemete rotation of the swarm relatively to human orientation: change direction variable
+            # for instance: direction=[cos(hum_yaw), sin(hum_yaw)]
+            # direction = np.array( des_poses[0] - human_pose_init ) / norm(des_poses[0] - human_pose_init)
         else:
-        	v = V / norm(V); u = U / norm(U)
+            f1 = combined_potential(obstacles_poses, goal)
+            des_poses[0], vel1 = gradient_planner(f1, current_point1)            
 
         # drones polygonal formation
         direction = ( goal - des_poses[0] ) / norm(goal - des_poses[0])
         des_poses[1:] = formation(num_robots, des_poses[0], direction, R_swarm)
+        v = direction; u = np.array([-v[1], v[0]])
 
         if impedance:
             # drones positions are corrected according to the impedance model
             # based on leader's velocity
-            imp_pose, imp_vel, imp_time_prev = velocity_imp(v, imp_pose_prev, imp_vel_prev, imp_time_prev)
+            imp_pose, imp_vel, imp_time_prev = velocity_imp(vel1, imp_pose_prev, imp_vel_prev, imp_time_prev)
             imp_pose_prev = imp_pose
             imp_vel_prev = imp_vel
 
-            des_poses[0] += 0.1  * imp_pose
+            imp_scale = 1.0 if interactive else 0.05
+            des_poses[0] += imp_scale * imp_pose
             if num_robots==2:
-                des_poses[1] += 0.05 * imp_pose @ u/norm(u) *u/norm(u) # impedance correction term is projected in u-vector direction
+                des_poses[1] += imp_scale * imp_pose @ u/norm(u) *u/norm(u) # impedance correction term is projected in u-vector direction
             if num_robots==3:
-                des_poses[2] += 0.05 * imp_pose @ u/norm(u) *u/norm(u) # u-vector direction
+                des_poses[2] += imp_scale * imp_pose @ u/norm(u) *u/norm(u) # u-vector direction
             if num_robots==4:
-                des_poses[3] -= 0.05 * imp_pose @ v/norm(v) *v/norm(v) # v-vector direction
+                des_poses[3] -= imp_scale * imp_pose @ v/norm(v) *v/norm(v) # v-vector direction
 
         if formation_gradient:
             # following drones are attracting to desired points - vertices of the polygonal formation
             for p in range(1,num_robots):
-                des_poses[p], _, _ = gradient_planner(obstacles_poses, des_poses[p], des_poses[p])
+                f = combined_potential(obstacles_poses, des_poses[p])
+                des_poses[p], _ = gradient_planner(f, des_poses[p])
 
         for r in range(num_robots):
             routes[r] = np.vstack([routes[r], des_poses[r]])
@@ -251,8 +273,8 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
         progress_bar.next()
         plt.cla()
 
-        draw_map(f, obstacles_poses, draw_gradients=draw_gradients)
-        draw_robots()
+        draw_map(obstacles_poses, f1, draw_gradients=not interactive)
+        draw_robots(current_point1, routes, num_robots, robots_poses, centroid)
         if animate:
             plt.draw()
             plt.pause(0.01)
