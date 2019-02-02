@@ -1,8 +1,50 @@
 import contextlib
 from matplotlib import animation as anim
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
+from math import *
 import time
 
+
+def draw_map(start, goal, obstacles_poses, R_obstacles, f=None, draw_gradients=True, nrows=500, ncols=500):
+    if draw_gradients and f is not None:
+        skip = 10
+        [x_m, y_m] = np.meshgrid(np.linspace(-2.5, 2.5, ncols), np.linspace(-2.5, 2.5, nrows))
+        [gy, gx] = np.gradient(-f);
+        Q = plt.quiver(x_m[::skip, ::skip], y_m[::skip, ::skip], gx[::skip, ::skip], gy[::skip, ::skip])
+    else:
+        plt.grid()
+    plt.plot(start[0], start[1], 'ro', color='yellow', markersize=10);
+    plt.plot(goal[0], goal[1], 'ro', color='green', markersize=10);
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    ax = plt.gca()
+    for pose in obstacles_poses:
+        circle = plt.Circle(pose, R_obstacles, color='red')
+        ax.add_artist(circle)
+    # Create a Rectangle patch
+    rect1 = patches.Rectangle((-2.5,-1.15),2.0,0.2,linewidth=1,color='red',fill='True')
+    rect2 = patches.Rectangle((-1.2, 1.4), 0.2,1.0,linewidth=1,color='red',fill='True')
+    rect3 = patches.Rectangle(( 0.4, 0.8), 2.0,0.5,linewidth=1,color='red',fill='True')
+    ax.add_patch(rect1)
+    ax.add_patch(rect2)
+    ax.add_patch(rect3)
+    
+def draw_robots(current_point1, routes=None, num_robots=None, robots_poses=None, centroid=None, vel1=None):
+    if vel1 is not None: plt.arrow(current_point1[0], current_point1[1], vel1[0], vel1[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
+    plt.plot(routes[0][:,0], routes[0][:,1], 'green', linewidth=2)
+    for r in range(1,num_robots):
+        plt.plot(routes[r][:,0], routes[r][:,1], '--', color='blue', linewidth=2)
+
+    for pose in robots_poses:
+        plt.plot(pose[0], pose[1], 'ro', color='blue')
+    # compute centroid and sort poses by polar angle
+    pp = robots_poses
+    pp.sort(key=lambda p: atan2(p[1]-centroid[1],p[0]-centroid[0]))
+    formation = patches.Polygon(pp, color='blue', fill=False, linewidth=2);
+    plt.gca().add_patch(formation)
+    plt.plot(centroid[0], centroid[1], '*', color='blue')
 
 def get_movie_writer(should_write_movie, title, movie_fps, plot_pause_len):
     """
