@@ -10,11 +10,9 @@ in your Matlab command line.
 Python code that is aimed to apply path planning algorithms for real mobile robots is located in pthon_src folder.
 In order to launch the algorithms:
 
-python3 gradient_online.py
-
-python3 GradientBasedPlanner.py
+python3 gradient_interactive.py
 
 jupyter-notebook GradientBasedPlanning.ipynb
 
-- Real time potential fields-based obstacle avoidance method with moving or static obstacles.
+- Real time potential fields-based obstacle avoidance method for robots formations with moving or static obstacles.
 
