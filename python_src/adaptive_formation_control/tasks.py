@@ -34,7 +34,7 @@ def draw_map(start, goal, obstacles_poses, R_obstacles, f=None, draw_gradients=T
 def draw_robots(current_point1, routes=None, num_robots=None, robots_poses=None, centroid=None, vel1=None):
     if vel1 is not None: plt.arrow(current_point1[0], current_point1[1], vel1[0], vel1[1], width=0.01, head_width=0.05, head_length=0.1, fc='k')
     plt.plot(routes[0][:,0], routes[0][:,1], 'green', linewidth=2)
-    for r in range(1,num_robots):
+    for r in range(1, num_robots):
         plt.plot(routes[r][:,0], routes[r][:,1], '--', color='blue', linewidth=2)
 
     for pose in robots_poses:
@@ -93,3 +93,15 @@ def hum_vel(human_pose):
     hum_vel = np.array( [vel_x, vel_y, vel_z] )
 
     return hum_vel
+
+
+def euler_from_quaternion(q):
+    """
+    Intrinsic Tait-Bryan rotation of xyz-order.
+    """
+    q = q / np.linalg.norm(q)
+    qx, qy, qz, qw = q
+    roll = atan2(2.0*(qy*qz + qw*qx), qw*qw - qx*qx - qy*qy + qz*qz)
+    pitch = asin(-2.0*(qx*qz - qw*qy))
+    yaw = atan2(2.0*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
+    return roll, pitch, yaw
