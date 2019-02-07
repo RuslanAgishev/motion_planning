@@ -45,7 +45,7 @@ def gradient_planner(f, current_point, ncols=500, nrows=500, movement_rate=0.06)
     """
     [gy, gx] = np.gradient(-f);
     iy, ix = np.array( meters2grid(current_point), dtype=int )
-    w = 40 # smoothing window size for gradient-velocity
+    w = 30 # smoothing window size for gradient-velocity
     vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
     vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
     V = np.array([vx, vy])
@@ -117,15 +117,15 @@ def formation(num_robots, leader_des, v, R_swarm):
 """ initialization """
 animate              = 1   # show 1-each frame or 0-just final configuration
 random_obstacles     = 1   # randomly distributed obstacles on the map
-num_random_obstacles = 6   # number of random circular obstacles on the map
-num_robots           = 4   # number of drones in formation
+num_random_obstacles = 16   # number of random circular obstacles on the map
+num_robots           = 4   # <=4, number of drones in formation
 moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
 impedance            = 0   # impedance links between the leader and followers (leader's velocity)
 formation_gradient   = 1   # followers are attracting to their formation position and repelling from obstacles
 draw_gradients       = 1   # 1-gradients plot, 0-grid
 postprocessing       = 0   # show processed data figures after the flight
 """ human guided swarm params """
-interactive          = 0      # 1-human guided swarm, 0-potential fields as a planner to goal pose
+interactive          = 1      # 1-human guided swarm, 0-potential fields as a planner to goal pose
 human_name           = 'palm' # vicon mocap object
 pos_coef             = 3.0    # scale of the leader's movement relatively to the human operator
 initialized          = False  # is always inits with False: for relative position control
@@ -140,8 +140,8 @@ R_swarm     = 0.3 # [m]
 start = np.array([-1.8, 1.8]); goal = np.array([1.8, -1.8])
 V0 = (goal - start) / norm(goal-start)    # initial movement direction, |V0| = 1
 U0 = np.array([-V0[1], V0[0]]) / norm(V0) # perpendicular to initial movement direction, |U0|=1
-imp_pose_prev = np.array( [0,0] )
-imp_vel_prev  = np.array( [0,0] )
+imp_pose_prev = np.array([0, 0])
+imp_vel_prev  = np.array([0, 0])
 imp_time_prev = time.time()
 
 if random_obstacles:
@@ -192,7 +192,6 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
 
         """ Leader's pose update """
         if interactive:
-            f1 = combined_potential(obstacles_poses, current_point1)
             # human palm pose and velocity using Vicon motion capture
             if not initialized:
                 human_pose_init = human_pose[:2]
@@ -200,7 +199,9 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
                 initialized = True
             dx, dy = human_pose[:2] - human_pose_init
             des_poses[0] = np.array([  drone1_pose_init[0] + pos_coef*dx, drone1_pose_init[1] + pos_coef*dy ])
-            vels[0] = hum_vel(human_pose)
+            vels[0] = pos_coef*hum_vel(human_pose)
+            f1 = combined_potential(obstacles_poses, des_poses[0])
+            des_poses[0], _ = gradient_planner(f1, des_poses[0])
             direction = np.array([cos(human_yaw), sin(human_yaw)]) # rotation of the swarm relatively to human orientation
         else:
             f1 = combined_potential(obstacles_poses, goal)
@@ -236,9 +237,9 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
             for p in range(1, num_robots):
                 """ including another robots in formation in obstacles array: """
                 robots_obstacles = [x for i,x in enumerate(robots_poses) if i!=p]
-                obstacles_poses1 = np.array(robots_obstacles + obstacles_poses.tolist())
-                f = combined_potential(obstacles_poses1, des_poses[p])
-                # f = combined_potential(obstacles_poses, des_poses[p])
+                # obstacles_poses1 = np.array(robots_obstacles + obstacles_poses.tolist())
+                # f = combined_potential(obstacles_poses1, des_poses[p])
+                f = combined_potential(obstacles_poses, des_poses[p])
                 des_poses[p], vels[p] = gradient_planner(f, des_poses[p])
                 norm_vels[p].append(norm(vels[p]))
 
@@ -312,4 +313,5 @@ if postprocessing:
 #     - oscillation, underdamped, critically damped, overdamped
 #     - velocity plot for all drones, acc, jerk ?
 # 4. another drones are obstacles for each individual drone (done, however attractive and repelling forces should be adjusted)
-# 6. import swarmlib (OOP) and test flight
+# 5. import swarmlib (OOP) and test flight
+# 6. add borders: see image processing (mirrow or black)
