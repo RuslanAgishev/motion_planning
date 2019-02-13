@@ -117,7 +117,7 @@ def formation(num_robots, leader_des, v, R_swarm):
 """ initialization """
 animate              = 1   # show 1-each frame or 0-just final configuration
 random_obstacles     = 1   # randomly distributed obstacles on the map
-num_random_obstacles = 16   # number of random circular obstacles on the map
+num_random_obstacles = 12   # number of random circular obstacles on the map
 num_robots           = 4   # <=4, number of drones in formation
 moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
 impedance            = 0   # impedance links between the leader and followers (leader's velocity)
@@ -125,7 +125,7 @@ formation_gradient   = 1   # followers are attracting to their formation positio
 draw_gradients       = 1   # 1-gradients plot, 0-grid
 postprocessing       = 0   # show processed data figures after the flight
 """ human guided swarm params """
-interactive          = 1      # 1-human guided swarm, 0-potential fields as a planner to goal pose
+interactive          = 0      # 1-human guided swarm (requires MoCap system), 0-potential fields as a planner to goal pose
 human_name           = 'palm' # vicon mocap object
 pos_coef             = 3.0    # scale of the leader's movement relatively to the human operator
 initialized          = False  # is always inits with False: for relative position control
