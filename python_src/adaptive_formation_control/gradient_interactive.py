@@ -8,7 +8,7 @@ from matplotlib import collections
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 from math import *
 import random
-from impedance.impedance_modeles import *
+from impedance_modeles import *
 import time
 
 from progress.bar import FillingCirclesBar
@@ -62,7 +62,7 @@ def combined_potential(obstacles_poses, goal, nrows=500, ncols=500):
     d2 = (d/100.) + 1; # Rescale and transform distances
     d0 = 2;
     nu = 200;
-    repulsive = nu*((1./d2 - 1/d0)**2);
+    repulsive = nu*((1./d2 - 1./d0)**2);
     repulsive [d2 > d0] = 0;
     """ Attractive potential """
     [x, y] = np.meshgrid(np.arange(ncols), np.arange(nrows))
@@ -117,12 +117,12 @@ def formation(num_robots, leader_des, v, R_swarm):
 """ initialization """
 animate              = 1   # show 1-each frame or 0-just final configuration
 random_obstacles     = 1   # randomly distributed obstacles on the map
-num_random_obstacles = 12   # number of random circular obstacles on the map
+num_random_obstacles = 8   # number of random circular obstacles on the map
 num_robots           = 4   # <=4, number of drones in formation
 moving_obstacles     = 1   # 0-static or 1-dynamic obstacles
 impedance            = 0   # impedance links between the leader and followers (leader's velocity)
 formation_gradient   = 1   # followers are attracting to their formation position and repelling from obstacles
-draw_gradients       = 1   # 1-gradients plot, 0-grid
+draw_gradients       = 0   # 1-gradients plot, 0-grid
 postprocessing       = 0   # show processed data figures after the flight
 """ human guided swarm params """
 interactive          = 0      # 1-human guided swarm (requires MoCap system), 0-potential fields as a planner to goal pose
@@ -223,8 +223,8 @@ with movie_writer.saving(fig, movie_file_name, max_its) if should_write_movie el
 
             imp_scale = 0.1 if interactive else 0.03
             # des_poses[0] += 0.1*imp_scale * imp_pose
-            du = imp_scale*imp_pose @ u/norm(u) # u-vector direction
-            dv = imp_scale*imp_pose @ v/norm(v) # v-vector direction
+            du = imp_scale*np.dot(imp_pose, u)/norm(u) # u-vector direction
+            dv = imp_scale*np.dot(imp_pose, v)/norm(v) # v-vector direction
             if num_robots>=2:
                 des_poses[1] +=  du * u + dv * v # impedance correction term is projected in u,v-vectors directions
             if num_robots>=3:
