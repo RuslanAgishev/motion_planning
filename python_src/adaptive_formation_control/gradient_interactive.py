@@ -125,7 +125,7 @@ formation_gradient   = 1   # followers are attracting to their formation positio
 draw_gradients       = 0   # 1-gradients plot, 0-grid
 postprocessing       = 0   # show processed data figures after the flight
 """ human guided swarm params """
-interactive          = 0      # 1-human guided swarm, 0-potential fields as a planner to goal pose
+interactive          = 0      # 1-human guided swarm (requires MoCap system), 0-potential fields as a planner to goal pose
 human_name           = 'palm' # vicon mocap object
 pos_coef             = 3.0    # scale of the leader's movement relatively to the human operator
 initialized          = False  # is always inits with False: for relative position control
