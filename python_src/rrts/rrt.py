@@ -6,7 +6,7 @@ from numpy.linalg import norm
 from math import *
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
-from random import random
+from numpy.random import uniform
 from scipy.spatial import ConvexHull
 from matplotlib import path
 import time
@@ -22,7 +22,7 @@ def isCollisionFreeVertex(obstacles, xy):
         hull = path.Path(obstacle)
         collFree = not hull.contains_points([xy])
         if hull.contains_points([xy]):
-            return collFree
+            return False
 
     return collFree
 
@@ -36,7 +36,8 @@ def isCollisionFreeEdge(obstacles, closest_vert, xy):
     for i in range(1,M-1):
         p = (1-t[i])*closest_vert + t[i]*xy # calculate configuration
         collFree = isCollisionFreeVertex(obstacles, p) 
-        if collFree == False: return False
+        if collFree == False:
+            return False
 
     return collFree
 
@@ -52,7 +53,7 @@ def closestVertex(rrt_verts, xy):
     return closest_vert
 
 
-visualize = 1
+animate = 1
 
 
 # Obstacles. An obstacle is represented as a convex hull of a number of points. 
@@ -84,8 +85,8 @@ for k in range(len(obstacles)):
     ax.add_patch( Polygon(obstacles[k]) )
 
 # Start and goal positions
-xy_start = np.array([0.7, 0.4]); plt.plot(xy_start[0],xy_start[1],'bo',color='yellow', markersize=10)
-xy_goal =  np.array([-1.0, 1.0]);  plt.plot(xy_goal[0], xy_goal[1], 'bo',color='green',markersize=10)
+xy_start = np.array([0.7, 0.4]); plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
+xy_goal =  np.array([-1.0, 1.0]);  plt.plot(xy_goal[0], xy_goal[1], 'bo',color='green',markersize=20)
 
 # Initialize RRT. The RRT will be represented as a 2 x N list of points. So each column represents a vertex of the tree.
 rrt_verts = xy_start[np.newaxis].T
@@ -99,7 +100,7 @@ start_time = time.time()
 while not nearGoal:
 # for i in range(1000):
     # Sample point
-    rnd = random()
+    rnd = uniform()
     # With probability 0.05, sample the goal. This promotes movement to the goal.
     if rnd < 0.05:
         xy = xy_goal
@@ -108,7 +109,8 @@ while not nearGoal:
         # with the bounds world_bounds_x and world_bounds_y defined above.
         # So, the x coordinate should be sampled in the interval
         # world_bounds_x=2.5 and the y coordinate from world_bounds_y=2.5.
-        xy = np.array([random()*5-2.5, random()*5-2.5]) # Should be a 2 x 1 vector
+        xy = np.array([uniform()*5-2.5, uniform()*5-2.5]) # Should be a 2 x 1 vector
+    if abs(xy[0])>2.5 or abs(xy[1])>2.5: print "ERROR: not correct sample point"
     # Check if sample is collision free
     collFree = isCollisionFreeVertex(obstacles, xy)
     # If it's not collision free, continue with loop
@@ -129,12 +131,12 @@ while not nearGoal:
     if not collFree:
         continue
         
-    if visualize:
-	    plt.plot(xy[0], xy[1], 'ro')
-	    plt.plot(new_vert[0], new_vert[1], 'bo',color = 'blue', markersize=5) # VERTICES
-	    plt.plot([closest_vert[0], new_vert[0]], [closest_vert[1], new_vert[1]], color='blue') # EDGES
-	    plt.draw()
-	    plt.pause(0.01)
+    if animate:
+        plt.plot(xy[0], xy[1], 'ro', color='k')
+        plt.plot(new_vert[0], new_vert[1], 'bo',color = 'blue', markersize=5) # VERTICES
+        plt.plot([closest_vert[0], new_vert[0]], [closest_vert[1], new_vert[1]], color='blue') # EDGES
+        plt.draw()
+        plt.pause(0.01)
 
     # If it is collision free, add it to tree    
     rrt_verts = np.hstack([rrt_verts, new_vert[np.newaxis].T])
@@ -144,7 +146,11 @@ while not nearGoal:
     	end_time = time.time()
         print 'Reached the goal after %f seconds:' % (end_time - start_time)
     	nearGoal = True
+        break
 
-
+if not animate:
+    plt.plot(rrt_verts[0,:], rrt_verts[1,:], 'ro', color='blue')
+    plt.draw()
+    plt.pause(0.1)
 raw_input('Hit Enter to close')
 plt.close('all')
