@@ -50,7 +50,11 @@ def draw_map():
                   np.array([[1-w, 0], [1+w, 0], [1+w, 1], [1, 1]]),
                   np.array([[1-w, 2+w], [1+w, 2+w], [1+w, 1.5], [1, 1.5]]),
                   np.array([[0.8, 1], [1+w, 1], [1+w, 1+w], [0.8, 1+w]]),
-                  np.array([[0.8, 1.5], [1+w, 1.5], [1+w, 1.5+w], [0.8, 1.5+w]])
+                  np.array([[0.8, 1.5], [1+w, 1.5], [1+w, 1.5+w], [0.8, 1.5+w]]),
+
+                  np.array([[-0.5, -0.5], [-1.5, -0.5], [-1-w, -1.5-w], [-0.8, -1.5-w]]),
+                  
+                  np.array([[0.5, -1.2], [2.0, -1.2], [1+w, -1.5-w], [0.8, -1.5-w]])
                 ]
     # Bounds on world
     world_bounds_x = [-2.5, 2.5]
@@ -69,9 +73,9 @@ def draw_map():
 
 class Node:
     def __init__(self):
-        self.p     = [0, 0]
-        self.i     = 0
-        self.iPrev = 0
+        self.p     = [0, 0] # node XY-position
+        self.i     = 0 # node id
+        self.iPrev = 0 # node parent's id
 
 def closestNode(rrt, p):
     distance = []
@@ -94,10 +98,10 @@ maxiters  = 5000
 obstacles = draw_map()
 
 # Start and goal positions
-xy_start = np.array([0.7, 0.4]); plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
-xy_goal =  np.array([-2.0, -2.0]);  plt.plot(xy_goal[0], xy_goal[1], 'bo',color='green',markersize=20)
+xy_start = np.array([0.5, 0.5]); plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
+xy_goal =  np.array([-1.5, 0.8]);  plt.plot(xy_goal[0], xy_goal[1], 'bo',color='green',markersize=20)
 
-# Initialize RRT. The RRT will be represented as a 2 x N list of points.
+# Initialize RRT. The RRT will be represented as a list of nodes.
 # So each column represents a vertex of the tree.
 rrt = []
 start_node = Node()
@@ -106,8 +110,8 @@ start_node.i = 0
 start_node.iPrev = 0
 rrt.append(start_node)
 nearGoal = False # This will be set to true if goal has been reached
-minDistGoal = 0.1 # Convergence criterion: success when the tree reaches within 0.25 in distance from the goal.
-d = 0.20 # Extension parameter: this controls how far the RRT extends in each step.
+minDistGoal = 0.25 # Convergence criterion: success when the tree reaches within 0.25 in distance from the goal.
+d = 0.8 # Extension parameter: this controls how far the RRT extends in each step.
 
 # RRT algorithm
 start_time = time.time()
@@ -117,7 +121,7 @@ while not nearGoal: # and iters < maxiters:
     # Sample point
     rnd = random()
     # With probability 0.05, sample the goal. This promotes movement to the goal.
-    if rnd < 0.05:
+    if rnd < 0.10:
         xy = xy_goal
     else:
         # Sample (uniformly) from space (with probability 0.95). The space is defined
@@ -151,7 +155,7 @@ while not nearGoal: # and iters < maxiters:
         continue
     
     if animate:
-#         plt.plot(xy[0], xy[1], 'ro', color='k')
+        # plt.plot(xy[0], xy[1], 'ro', color='k')
         plt.plot(new_node.p[0], new_node.p[1], 'bo',color = 'blue', markersize=5) # VERTICES
         plt.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], color='blue') # EDGES
         plt.draw()
@@ -170,6 +174,8 @@ while not nearGoal: # and iters < maxiters:
         goal_node.iPrev = new_node.i
         if isCollisionFreeEdge(obstacles, new_node.p, goal_node.p):
             rrt.append(goal_node)
+            P = [goal_node.p]
+        else: P = []
 
         end_time = time.time()
         nearGoal = True
@@ -183,7 +189,6 @@ print 'RRT length: ', len(rrt)
 # Path construction from RRT:
 print 'Constructing the path...'
 i = len(rrt) - 1
-P = []
 while True:
     i = rrt[i].iPrev
     P.append(rrt[i].p)
