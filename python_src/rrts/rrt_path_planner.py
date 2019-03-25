@@ -10,33 +10,9 @@ from scipy.spatial import ConvexHull
 from matplotlib import path
 import time
 
+from PathSmoothing import SmoothPath
+from tools import *
 
-# Helper functions
-def isCollisionFreeVertex(obstacles, xy):
-    collFree = True
-
-    for obstacle in obstacles:
-        hull = path.Path(obstacle)
-        collFree = not hull.contains_points([xy])
-        if hull.contains_points([xy]):
-#             print 'collision'
-            return collFree
-
-    return collFree
-
-def isCollisionFreeEdge(obstacles, closest_vert, xy):
-    closest_vert = np.array(closest_vert); xy = np.array(xy)
-    collFree = True
-    l = norm(closest_vert - xy)
-    map_resolution = 0.01; M = int(l / map_resolution)
-    if M <= 2: M = 3
-    t = np.linspace(0,1,M)
-    for i in range(1,M-1):
-        p = (1-t[i])*closest_vert + t[i]*xy # calculate configuration
-        collFree = isCollisionFreeVertex(obstacles, p) 
-        if collFree == False: return False
-
-    return collFree
 
 
 def draw_map():
@@ -197,5 +173,10 @@ while True:
         break
 P = np.array(P)
 plt.plot( P[:,0], P[:,1], color='green', linewidth=5 )
+
+
+print 'Path smoothing...'
+P_smooth = SmoothPath(P, obstacles, smoothiters=40)
+plt.plot(P_smooth[:,0], P_smooth[:,1], linewidth=5, color='orange', label='smoothed path')
 
 plt.show()
