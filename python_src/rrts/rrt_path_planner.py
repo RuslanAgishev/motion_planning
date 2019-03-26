@@ -10,42 +10,7 @@ from scipy.spatial import ConvexHull
 from matplotlib import path
 import time
 
-from PathSmoothing import SmoothPath
 from tools import *
-
-
-
-def draw_map():
-    # Obstacles. An obstacle is represented as a convex hull of a number of points. 
-    # First row is x, second is y (position of vertices)
-    w = 0.2
-    obstacles = [
-                  np.array([[0, 0], [1, 0], [1, 0.1], [0, w]]),
-                  np.array([[0, 0], [w, 0.2], [0.1, 2], [0.0, 2.0]]),
-                  np.array([[0, 2-w], [1, 2], [1, 2+w], [0, 2+w]]),
-                  np.array([[1-w, 0], [1+w, 0], [1+w, 1], [1, 1]]),
-                  np.array([[1-w, 2+w], [1+w, 2+w], [1+w, 1.5], [1, 1.5]]),
-                  np.array([[0.8, 1], [1+w, 1], [1+w, 1+w], [0.8, 1+w]]),
-                  np.array([[0.8, 1.5], [1+w, 1.5], [1+w, 1.5+w], [0.8, 1.5+w]]),
-
-                  np.array([[-0.5, -0.5], [-1.5, -0.5], [-1-w, -1.5-w], [-0.8, -1.5-w]]),
-                  
-                  np.array([[0.5, -1.2], [2.0, -1.2], [1+w, -1.5-w], [0.8, -1.5-w]])
-                ]
-    # Bounds on world
-    world_bounds_x = [-2.5, 2.5]
-    world_bounds_y = [-2.5, 2.5]
-    # Draw obstacles
-    fig = plt.figure(figsize=(10, 10))
-    plt.grid()
-    ax = plt.gca()
-    ax.set_xlim(world_bounds_x)
-    ax.set_ylim(world_bounds_y)
-    for k in range(len(obstacles)):
-        ax.add_patch( Polygon(obstacles[k]) )
-        
-    return obstacles
-
 
 class Node:
     def __init__(self):
@@ -66,117 +31,102 @@ def closestNode(rrt, p):
     return closest_node
 
 
+def rrt_path(obstacles, xy_start, xy_goal, params):
+    # Initialize RRT. The RRT will be represented as a list of nodes.
+    # So each column represents a vertex of the tree.
+    rrt = []
+    start_node = Node()
+    start_node.p = xy_start
+    start_node.i = 0
+    start_node.iPrev = 0
+    rrt.append(start_node)
+    nearGoal = False # This will be set to true if goal has been reached
+    minDistGoal = params.minDistGoal # Convergence criterion: success when the tree reaches within 0.25 in distance from the goal.
+    d = params.extension # Extension parameter: this controls how far the RRT extends in each step.
 
-# Initialization
-animate = 1
-maxiters  = 5000
+    # RRT algorithm
+    start_time = time.time()
+    iters = 0
+    print 'Configuration space sampling started ...'
+    while not nearGoal: # and iters < maxiters:
+        # Sample point
+        rnd = random()
+        # With probability goal_prob, sample the goal. This promotes movement to the goal.
+        if rnd < params.goal_prob:
+            xy = xy_goal
+        else:
+            # Sample (uniformly) from space (with probability 0.95). The space is defined
+            # with the bounds world_bounds_x and world_bounds_y defined above.
+            # So, the x coordinate should be sampled in the interval
+            # world_bounds_x=2.5 and the y coordinate from world_bounds_y=2.5.
+            xy = np.array([random()*2*params.world_bounds_x[1]-params.world_bounds_x[1], random()*2*params.world_bounds_x[1]-params.world_bounds_x[1]]) # Should be a 2 x 1 vector
+        # Check if sample is collision free
+        collFree = isCollisionFreeVertex(obstacles, xy)
+        # If it's not collision free, continue with loop
+        if not collFree:
+            iters += 1
+            continue
 
-obstacles = draw_map()
+        # If it is collision free, find closest point in existing tree. 
+        closest_node = closestNode(rrt, xy)
+        
+        # Extend tree towards xy from closest_vert. Use the extension parameter
+        # d defined above as your step size. In other words, the Euclidean
+        # distance between new_vert and closest_vert should be d.
+        new_node = Node()
+        new_node.p = closest_node.p + d * (xy - closest_node.p)
+        new_node.i = len(rrt)
+        new_node.iPrev = closest_node.i
 
-# Start and goal positions
-xy_start = np.array([0.5, 0.5]); plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
-xy_goal =  np.array([-1.5, 0.8]);  plt.plot(xy_goal[0], xy_goal[1], 'bo',color='green',markersize=20)
+        # Check if new vertice is in collision
+        collFree = isCollisionFreeEdge(obstacles, closest_node.p, new_node.p)
+        # If it's not collision free, continue with loop
+        if not collFree:
+            iters += 1
+            continue
+        
+        if params.animate:
+            # plt.plot(xy[0], xy[1], 'ro', color='k')
+            plt.plot(new_node.p[0], new_node.p[1], 'bo',color = 'blue', markersize=5) # VERTICES
+            plt.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], color='blue') # EDGES
+            plt.draw()
+            plt.pause(0.01)
 
-# Initialize RRT. The RRT will be represented as a list of nodes.
-# So each column represents a vertex of the tree.
-rrt = []
-start_node = Node()
-start_node.p = xy_start
-start_node.i = 0
-start_node.iPrev = 0
-rrt.append(start_node)
-nearGoal = False # This will be set to true if goal has been reached
-minDistGoal = 0.25 # Convergence criterion: success when the tree reaches within 0.25 in distance from the goal.
-d = 0.8 # Extension parameter: this controls how far the RRT extends in each step.
 
-# RRT algorithm
-start_time = time.time()
-iters = 0
-print 'Configuration space sampling started ...'
-while not nearGoal: # and iters < maxiters:
-    # Sample point
-    rnd = random()
-    # With probability 0.05, sample the goal. This promotes movement to the goal.
-    if rnd < 0.10:
-        xy = xy_goal
-    else:
-        # Sample (uniformly) from space (with probability 0.95). The space is defined
-        # with the bounds world_bounds_x and world_bounds_y defined above.
-        # So, the x coordinate should be sampled in the interval
-        # world_bounds_x=2.5 and the y coordinate from world_bounds_y=2.5.
-        xy = np.array([random()*5-2.5, random()*5-2.5]) # Should be a 2 x 1 vector
-    # Check if sample is collision free
-    collFree = isCollisionFreeVertex(obstacles, xy)
-    # If it's not collision free, continue with loop
-    if not collFree:
+        # If it is collision free, add it to tree    
+        rrt.append(new_node)
+
+        # Check if we have reached the goal
+        if norm(np.array(xy_goal) - np.array(new_node.p)) < minDistGoal:
+            # Add last, goal node
+            goal_node = Node()
+            goal_node.p = xy_goal
+            goal_node.i = len(rrt)
+            goal_node.iPrev = new_node.i
+            if isCollisionFreeEdge(obstacles, new_node.p, goal_node.p):
+                rrt.append(goal_node)
+                P = [goal_node.p]
+            else: P = []
+
+            end_time = time.time()
+            nearGoal = True
+            print 'Reached the goal after %.2f seconds:' % (end_time - start_time)
+
         iters += 1
-        continue
 
-    # If it is collision free, find closest point in existing tree. 
-    closest_node = closestNode(rrt, xy)
-    
-    # Extend tree towards xy from closest_vert. Use the extension parameter
-    # d defined above as your step size. In other words, the Euclidean
-    # distance between new_vert and closest_vert should be d.
-    new_node = Node()
-    new_node.p = closest_node.p + d * (xy - closest_node.p)
-    new_node.i = len(rrt)
-    new_node.iPrev = closest_node.i
+    print 'Number of iterations passed: %d / %d' %(iters, params.maxiters)
+    print 'RRT length: ', len(rrt)
 
-    # Check if new vertice is in collision
-    collFree = isCollisionFreeEdge(obstacles, closest_node.p, new_node.p)
-    # If it's not collision free, continue with loop
-    if not collFree:
-        iters += 1
-        continue
-    
-    if animate:
-        # plt.plot(xy[0], xy[1], 'ro', color='k')
-        plt.plot(new_node.p[0], new_node.p[1], 'bo',color = 'blue', markersize=5) # VERTICES
-        plt.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], color='blue') # EDGES
-        plt.draw()
-        plt.pause(0.01)
+    # Path construction from RRT:
+    print 'Constructing the path...'
+    i = len(rrt) - 1
+    while True:
+        i = rrt[i].iPrev
+        P.append(rrt[i].p)
+        if i == 0:
+            print 'Reached RRT start node'
+            break
+    P = np.array(P)
+    plt.plot( P[:,0], P[:,1], color='green', linewidth=5 )
 
-
-    # If it is collision free, add it to tree    
-    rrt.append(new_node)
-
-    # Check if we have reached the goal
-    if norm(np.array(xy_goal) - np.array(new_node.p)) < minDistGoal:
-        # Add last, goal node
-        goal_node = Node()
-        goal_node.p = xy_goal
-        goal_node.i = len(rrt)
-        goal_node.iPrev = new_node.i
-        if isCollisionFreeEdge(obstacles, new_node.p, goal_node.p):
-            rrt.append(goal_node)
-            P = [goal_node.p]
-        else: P = []
-
-        end_time = time.time()
-        nearGoal = True
-        print 'Reached the goal after %.2f seconds:' % (end_time - start_time)
-
-    iters += 1
-
-print 'Number of iterations passed: %d / %d' %(iters, maxiters)
-print 'RRT length: ', len(rrt)
-
-# Path construction from RRT:
-print 'Constructing the path...'
-i = len(rrt) - 1
-while True:
-    i = rrt[i].iPrev
-    P.append(rrt[i].p)
-    if i == 0:
-        print 'Reached RRT start node'
-        break
-P = np.array(P)
-plt.plot( P[:,0], P[:,1], color='green', linewidth=5 )
-
-
-print 'Path smoothing...'
-P_smooth = SmoothPath(P, obstacles, smoothiters=40)
-plt.plot(P_smooth[:,0], P_smooth[:,1], linewidth=5, color='orange', label='smoothed path')
-
-plt.show()
+    return P
