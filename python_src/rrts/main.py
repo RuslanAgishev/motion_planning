@@ -29,7 +29,7 @@ def draw_map(obstacles, params):
 
 class RRT_Params:
     def __init__(self):
-        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
         self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
@@ -77,7 +77,6 @@ rate = 10; dt = 1./rate
 dx = V * dt
 
 traj = np.array([P_smooth[0]])
-plt.figure(figsize=(10,10))
 for i in range(len(P_smooth)-1):
     A = P_smooth[i]
     B = P_smooth[i+1]
@@ -88,11 +87,13 @@ for i in range(len(P_smooth)-1):
     N = int( norm(B-A) / norm(delta) )
     sp = A
     for i in range(N):
-        # plt.plot(sp[0], sp[1], '.', color='k')
         sp += delta
         traj = np.vstack([traj, sp])
     traj = np.vstack([traj, B])
-plt.plot(traj[:,0], traj[:,1], '.')
+
+
+# plt.figure(figsize=(10,10))
+# plt.plot(traj[:,0], traj[:,1], '.')
 
 
 if params.visualize: plt.show()
