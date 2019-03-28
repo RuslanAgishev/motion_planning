@@ -142,21 +142,21 @@ def rrt_path(obstacles, xy_start, xy_goal, params):
 
             end_time = time.time()
             nearGoal = True
-            print 'Reached the goal after %.2f seconds:' % (end_time - start_time)
+            print 'RRT is constructed after %.2f seconds:' % (end_time - start_time)
 
         iters += 1
 
-    print 'Number of iterations passed: %d / %d' %(iters, params.maxiters)
-    print 'RRT length: ', len(rrt)
+    # print 'Number of iterations passed: %d / %d' %(iters, params.maxiters)
+    # print 'RRT length: ', len(rrt)
 
     # Path construction from RRT:
-    print 'Constructing the path...'
+    print 'Retriving the path from RRT...'
     i = len(rrt) - 1
     while True:
         i = rrt[i].iPrev
         P.append(rrt[i].p)
         if i == 0:
-            print 'Reached RRT start node'
+            # print 'Reached RRT start node'
             break
     P = np.array(P)
     # plt.plot( P[:,0], P[:,1], color='green', linewidth=5, label='path from RRT' )

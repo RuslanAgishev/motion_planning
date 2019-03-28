@@ -3,49 +3,17 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.patches import Polygon
-from scipy.ndimage.morphology import distance_transform_edt as bwdist
-
-from numpy.linalg import norm
-from math import *
-from random import random
-from scipy.spatial import ConvexHull
-from matplotlib import path
-import time
-
 
 from tools import *
 from rrt import *
 from potential_fields import *
 
 
-def layered_planner(P, obstacles_grid):
-    """
-    Layered Motion Planning:
-    inputs: -path from global planner, P
-            -obstacles map representation, obstacles_grid
-    output: -route, path corrected with potential fields-based
-             local planner
-    """
-    route = np.array([P[-1,:]])
-    for i in range(len(P)-1, 0, -1):
-        start = route[-1,:]
-        goal = P_short[i-1]
-        # Combined potential
-        f = combined_potential(obstacles_grid, goal)
-        # Plan route between 2 consequetive waypoints from P
-        V = 0.3 # [m/s]
-        freq = 100; dt = 1./freq
-        dx = V * dt
-        route_via = gradient_planner(f, start, goal, 50)
-        # plt.plot(start[0],start[1],'bo',color='red', markersize=10)
-        # plt.plot(goal[0], goal[1],'bo',color='green', markersize=10)
-        # print norm(start-goal) / dx, len(route_via)
-        route = np.vstack([route, route_via])
-
-    return route
-
+def move_obstacles(obstacles):
+    obstacles[-3] += np.array([0.006, 0.0])
+    obstacles[-2] += np.array([-0.003, 0.003])
+    obstacles[-1] += np.array([0.0, 0.006])
+    return obstacles
 
 class Params:
     def __init__(self):
@@ -54,7 +22,7 @@ class Params:
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
         self.minDistGoal = 0.25 # [m], min distance os samples from goal to add goal node to the RRT
-        self.extension = 0.2 # [m], extension parameter: this controls how far the RRT extends in each step.
+        self.extension = 0.4 # [m], extension parameter: this controls how far the RRT extends in each step.
         self.world_bounds_x = [-2.5, 2.5] # [m], map size in X-direction
         self.world_bounds_y = [-2.5, 2.5] # [m], map size in Y-direction
         self.drone_vel = 0.3 # [m/s]
@@ -78,9 +46,13 @@ obstacles = [
               np.array([[-2.5, 2.49], [2.5, 2.49], [2.5, 2.5], [-2.5, 2.5]]),
               np.array([[-2.5, -2.49], [-2.49, -2.49], [-2.49, 2.49], [-2.5, 2.49]]),
               np.array([[2.49, -2.49], [2.5, -2.49], [2.5, 2.49], [2.49, 2.49]]),
+
+              # moving obstacle
+              np.array([[-2.3, 2.0], [-2.2, 2.0], [-2.2, 2.1], [-2.3, 2.1]]),
+              np.array([[2.3, -2.3], [2.4, -2.3], [2.4, -2.2], [2.3, -2.2]]),
+              np.array([[0.0, -2.3], [0.1, -2.3], [0.1, -2.2], [0.0, -2.2]]),
             ]
 # obstacles = []
-obstacles_grid = grid_map(obstacles)
 
 # plt.figure(figsize=(12,12))
 # plt.grid()
@@ -91,50 +63,70 @@ obstacles_grid = grid_map(obstacles)
 
 
 # Global Planner: RRT path
-P = rrt_path(obstacles, xy_start, xy_goal, params)
-P_short = ShortenPath(P, obstacles)
+# plt.figure(figsize=(10,10))
+# draw_map(obstacles)
+# plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
+# plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20)
 
+P_long = rrt_path(obstacles, xy_start, xy_goal, params)
+P = ShortenPath(P_long, obstacles, smoothiters=30)
 
-plt.figure(figsize=(10,10))
-draw_map(obstacles)
-plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20)
-plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20)
-plt.plot( P[:,0], P[:,1], color='blue', linewidth=5, label='RRT path' )
-plt.plot(P_short[:,0], P_short[:,1], linewidth=5, color='orange', label='shortened path')
-plt.legend()
-plt.grid()
-
-
-# Potential Fields as a global planner
-# Combined potential
-f = combined_potential(obstacles_grid, xy_goal)
-# Plan route
-route_field = gradient_planner(f, xy_start, xy_goal, 700)
-
-plt.figure(figsize=(10,10))
-draw_gradient(f)
-plt.plot(route_field[:,0], route_field[:,1], linewidth=5)
-plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=10, label='start')
-plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=10, label='goal')
-plt.legend()
+# plt.plot( P_long[:,0], P_long[:,1], color='blue', linewidth=5, label='RRT path' )
+# plt.plot(P[:,0], P[:,1], linewidth=5, color='orange', label='shortened path')
+# plt.legend()
+# plt.grid()
 
 
 # Layered Motion Planning: RRT (global) + Potential Field (local)
-route = layered_planner(P_short, obstacles_grid)
-
 plt.figure(figsize=(10,10))
-draw_map(obstacles)
-plt.plot(P_short[:,0], P_short[:,1], linewidth=5, color='orange', label='global planner path')
-plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20, label='start')
-plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
-plt.grid()    
-# draw_gradient(f)
-# plt.plot(route[:,0], route[:,1], linewidth=5, color='green', label='path corrected with local planner')
-plt.plot(route[:,0], route[:,1], '.', color='green', label='path corrected with local planner')
-plt.legend()
 
+if __name__ == '__main__':
+    # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
+    route = np.array([P[-1,:]])
+    for i in range(len(P)-1, 0, -1): # loop through all the waypoints, nodes of P in inverse direction
+        start = route[-1,:]
+        waypoint = P[i-1]
+        
+        # Plan route between 2 consequetive waypoints from P
+        V_des = 1.0 # [m/s]
+        freq = 100; dt = 1./freq # freq = Vicon rate
+        dx = V_des*dt
+        maxiters = int( norm(waypoint - start) / dx )
 
-plt.draw()
-plt.pause(0.5)
-raw_input('Hit Enter to close')
-plt.close()
+        dist_to_goal_array = []
+        for i in range(maxiters):
+            current_point = route[-1,:]
+            dist_to_goal = norm(current_point-waypoint)
+            dist_to_goal_array.append(dist_to_goal)
+            if len(dist_to_goal_array)==10 and abs(min(dist_to_goal_array) - max(dist_to_goal_array)) < 0.03:
+                print "Robot is stopped, moving to the next waypoint..."
+                # print abs(min(dist_to_goal_array) - max(dist_to_goal_array))
+                break
+            if dist_to_goal < 0.05: # [m]
+                print('Waypoint is reached')
+                break
+
+            obstacles = move_obstacles(obstacles)            
+            obstacles_grid = grid_map(obstacles)
+            f = combined_potential(obstacles_grid, waypoint, influence_radius=1.5) # Artificial Potential Field, surface function
+            next_point = gradient_planner_next(current_point, f)
+            route = np.vstack( [route, next_point] )
+
+            plt.cla()
+            draw_map(obstacles)
+            draw_gradient(f)
+            plt.plot(current_point[0], current_point[1], '^', color='blue', markersize=15, zorder=15)
+            plt.plot(waypoint[0], waypoint[1],'bo',color='blue', markersize=10, label='Next waypoint', zorder=5)
+            plt.plot(route[:,0], route[:,1], linewidth=5, color='green', label="Robot's path, corrected with local planner", zorder=10)
+            plt.plot(P[:,0], P[:,1], linewidth=5, color='orange', label='Global planner path')
+            plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20, label='start')
+            plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
+            plt.legend()
+            plt.draw()
+            plt.pause(0.01)
+
+    # close windows if Enter-button is pressed
+    plt.draw()
+    plt.pause(0.1)
+    raw_input('Hit Enter to close')
+    plt.close('all')
