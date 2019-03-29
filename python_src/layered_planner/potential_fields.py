@@ -56,47 +56,47 @@ def combined_potential(obstacles_grid, goal, influence_radius=2, attractive_coef
     return f
 
 
-def gradient_planner (f, start, goal, maxiters=200):
-    # gradient_planner : This function plans a path through a 2D
-    # environment from a start to a destination based on the gradient of the
-    # function f which is passed in as a 2D array. The two arguments
-    # start_coords and end_coords denote the coordinates of the start and end
-    # positions respectively in the array while max_its indicates an upper
-    # bound on the number of iterations that the system can use before giving
-    # up.
-    # The output, route, is an array with 2 columns and n rows where the rows
-    # correspond to the coordinates of the robot as it moves along the route.
-    # The first column corresponds to the x coordinate and the second to the y coordinate
+# def gradient_planner (f, start, goal, maxiters=200):
+#     # gradient_planner : This function plans a path through a 2D
+#     # environment from a start to a destination based on the gradient of the
+#     # function f which is passed in as a 2D array. The two arguments
+#     # start_coords and end_coords denote the coordinates of the start and end
+#     # positions respectively in the array while max_its indicates an upper
+#     # bound on the number of iterations that the system can use before giving
+#     # up.
+#     # The output, route, is an array with 2 columns and n rows where the rows
+#     # correspond to the coordinates of the robot as it moves along the route.
+#     # The first column corresponds to the x coordinate and the second to the y coordinate
 
-    [gy, gx] = np.gradient(-f);
-    start_coords = meters2grid(start); end_coords = meters2grid(goal)
-    route = np.array( [np.array(start_coords)] )
-    dist_to_goal_array = []
-    for i in range(maxiters):
-        current_point = route[-1,:]
-        current = grid2meters(current_point)
-        plt.plot(current[0], current[1],'bo',color='red', markersize=2)
-        plt.pause(0.01)
-        dist_to_goal = norm(grid2meters(current_point)-grid2meters(end_coords))
-        dist_to_goal_array.append(dist_to_goal)
-        if len(dist_to_goal_array)==10 and abs(min(dist_to_goal_array) - max(dist_to_goal_array)) < 0.02:
-        	print "Robot is stopped"
-        	# print abs(min(dist_to_goal_array) - max(dist_to_goal_array))
-        	break
-        if dist_to_goal < 0.1: # [m]
-            # print('Reached the goal !')
-            break
-        iy, ix = np.array( current_point, dtype=int )
-        vx = gx[ix, iy]
-        vy = gy[ix, iy]
-        dt = 1 / np.linalg.norm([vx, vy])
-        next_point = current_point + dt*np.array( [vx, vy] )
-        route = np.vstack( [route, next_point] )
-    route = grid2meters(route)
+#     [gy, gx] = np.gradient(-f);
+#     start_coords = meters2grid(start); end_coords = meters2grid(goal)
+#     route = np.array( [np.array(start_coords)] )
+#     dist_to_goal_array = []
+#     for i in range(maxiters):
+#         current_point = route[-1,:]
+#         current = grid2meters(current_point)
+#         plt.plot(current[0], current[1],'bo',color='red', markersize=2)
+#         plt.pause(0.01)
+#         dist_to_goal = norm(grid2meters(current_point)-grid2meters(end_coords))
+#         dist_to_goal_array.append(dist_to_goal)
+#         if len(dist_to_goal_array)==10 and abs(min(dist_to_goal_array) - max(dist_to_goal_array)) < 0.02:
+#         	print "Robot is stopped"
+#         	# print abs(min(dist_to_goal_array) - max(dist_to_goal_array))
+#         	break
+#         if dist_to_goal < 0.1: # [m]
+#             # print('Reached the goal !')
+#             break
+#         iy, ix = np.array( current_point, dtype=int )
+#         vx = gx[ix, iy]
+#         vy = gy[ix, iy]
+#         dt = 1 / np.linalg.norm([vx, vy])
+#         next_point = current_point + dt*np.array( [vx, vy] )
+#         route = np.vstack( [route, next_point] )
+#     route = grid2meters(route)
     
     return route
 
-def gradient_planner_next(current_point, f):
+def gradient_planner_next(current_point, f, params):
     """
     gradient_planner_next: This function computes the next_point
     given current location and potential filed function, f.
@@ -107,7 +107,7 @@ def gradient_planner_next(current_point, f):
     w = 20 # smoothing window size for gradient-velocity
     vx = np.mean(gx[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
     vy = np.mean(gy[ix-int(w/2) : ix+int(w/2), iy-int(w/2) : iy+int(w/2)])
-    dt = 0.01 / np.linalg.norm([vx, vy])
+    dt = 0.01*params.drone_vel / np.linalg.norm([vx, vy])
     next_point = current_point + dt*np.array( [vx, vy] )
 
     return next_point
