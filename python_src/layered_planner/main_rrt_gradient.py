@@ -19,7 +19,7 @@ def move_obstacles(obstacles):
 
 class Params:
     def __init__(self):
-        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
         self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
@@ -79,14 +79,21 @@ for i in range(params.num_robots):
 robot1 = robots[0]; robot1.leader=True
 
 
-P_long = rrt_path(obstacles, xy_start, xy_goal, params)
-P = ShortenPath(P_long, obstacles, smoothiters=30) # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
-traj_global = waypts2setpts(P, params)
-
 
 # Layered Motion Planning: RRT (global) + Potential Field (local)
 if __name__ == '__main__':
     plt.figure(figsize=(10,10))
+    draw_map(obstacles)
+    plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20, label='start')
+    plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
+
+    P_long = rrt_path(obstacles, xy_start, xy_goal, params)
+    P = ShortenPath(P_long, obstacles, smoothiters=30) # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
+
+    traj_global = waypts2setpts(P, params)
+    plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
+    plt.pause(1.0)
+
     sp_ind = 0
     robot1.route = np.array([traj_global[0,:]])
     robot1.sp = robot1.route[-1,:]
