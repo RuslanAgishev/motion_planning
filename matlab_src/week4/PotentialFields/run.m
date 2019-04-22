@@ -69,7 +69,8 @@ figure;
 imshow(~obstacle);
 
 hold on;
-plot (goal(1), goal(2), 'r.', 'MarkerSize', 25);
+plot (goal(1), goal(2), 'r.', 'MarkerSize', 50);
+plot (start(1), start(2), 'g.', 'MarkerSize', 50);
 hold off;
 
 axis ([0 ncols 0 nrows]);
@@ -78,6 +79,7 @@ axis on;
 
 xlabel ('x');
 ylabel ('y');
+legend('Goal', 'Start')
 
 title ('Configuration Space');
 

@@ -19,7 +19,7 @@ def move_obstacles(obstacles):
 
 class Params:
     def __init__(self):
-        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
         self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
@@ -30,9 +30,10 @@ class Params:
         self.drone_vel = 2.0 # [m/s]
         self.ViconRate = 100 # [Hz]
         self.max_sp_dist = 0.5 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
-        self.influence_radius = 1.3 # potential fields radius, defining repulsive area size near the obstacle
+        self.influence_radius = 1.25 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
         self.num_robots = 4
+        self.moving_obstacles = 1
 
 class Robot:
     def __init__(self):
@@ -73,6 +74,13 @@ obstacles = [
               np.array([[0.0, -2.3], [0.1, -2.3], [0.1, -2.2], [0.0, -2.2]]),
             ]
 
+# passage_width = 0.2
+# obstacles = [
+# 			  # narrow passage
+#               np.array([[-2.5, -0.5], [-0.9-passage_width/2., -0.5], [-0.9-passage_width/2., 0.5], [-2.5, 0.5]]),
+#               np.array([[-0.9+passage_width/2., -0.5], [2.5, -0.5], [2.5, 0.5], [-0.9+passage_width/2., 0.5]]),
+# 			]
+
 robots = []
 for i in range(params.num_robots):
     robots.append(Robot())
@@ -89,6 +97,7 @@ if __name__ == '__main__':
 
     P_long = rrt_path(obstacles, xy_start, xy_goal, params)
     P = ShortenPath(P_long, obstacles, smoothiters=30) # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
+    P.append(xy_start)
 
     traj_global = waypts2setpts(P, params)
     plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
@@ -108,7 +117,7 @@ if __name__ == '__main__':
         if dist_to_goal < params.goal_tolerance: # [m]
             print 'Goal is reached'
             break
-        obstacles = move_obstacles(obstacles) # change poses of some obstacles on the map
+        if params.moving_obstacles: obstacles = move_obstacles(obstacles) # change poses of some obstacles on the map
 
         # leader's setpoint from global planner
         robot1.sp_global = traj_global[sp_ind,:]
@@ -132,7 +141,7 @@ if __name__ == '__main__':
         # visualization
         plt.cla()
         draw_map(obstacles)
-        draw_gradient(robots[2].f)
+        draw_gradient(robots[0].f)
         for robot in robots: plt.plot(robot.sp[0], robot.sp[1], '^', color='blue', markersize=10, zorder=15) # robots poses
         plt.plot(robot1.route[:,0], robot1.route[:,1], linewidth=2, color='green', label="Robot's path, corrected with local planner", zorder=10)
         for robot in robots[1:]: plt.plot(robot.route[:,0], robot.route[:,1], '--', linewidth=2, color='green', zorder=10)
