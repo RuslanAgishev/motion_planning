@@ -19,7 +19,7 @@ def move_obstacles(obstacles):
 
 class Params:
     def __init__(self):
-        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
         self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
@@ -33,6 +33,7 @@ class Params:
         self.influence_radius = 1.3 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
         self.num_robots = 8
+        self.moving_obstacles = 1
 
 class Robot:
     def __init__(self):
@@ -73,6 +74,13 @@ obstacles = [
               np.array([[0.0, -2.3], [0.1, -2.3], [0.1, -2.2], [0.0, -2.2]]),
             ]
 
+# passage_width = 0.2
+# obstacles = [
+# 			  # narrow passage
+#               np.array([[-2.5, -0.5], [-0.9-passage_width/2., -0.5], [-0.9-passage_width/2., 0.5], [-2.5, 0.5]]),
+#               np.array([[-0.9+passage_width/2., -0.5], [2.5, -0.5], [2.5, 0.5], [-0.9+passage_width/2., 0.5]]),
+# 			]
+
 robots = []
 for i in range(params.num_robots):
     robots.append(Robot())
@@ -108,7 +116,7 @@ if __name__ == '__main__':
         if dist_to_goal < params.goal_tolerance: # [m]
             print 'Goal is reached'
             break
-        obstacles = move_obstacles(obstacles) # change poses of some obstacles on the map
+        if params.moving_obstacles: obstacles = move_obstacles(obstacles) # change poses of some obstacles on the map
 
         # leader's setpoint from global planner
         robot1.sp_global = traj_global[sp_ind,:]
