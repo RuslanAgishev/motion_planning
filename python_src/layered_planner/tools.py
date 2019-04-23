@@ -22,7 +22,7 @@ def draw_map(obstacles):
     ax.set_xlim(world_bounds_x)
     ax.set_ylim(world_bounds_y)
     for k in range(len(obstacles)):
-        ax.add_patch( Polygon(obstacles[k]) )
+        ax.add_patch( Polygon(obstacles[k], color='k') )
 
 
 def draw_gradient(f, nrows=500, ncols=500):

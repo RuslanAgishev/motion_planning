@@ -10,7 +10,7 @@ from scipy.ndimage.morphology import distance_transform_edt as bwdist
 # Potential Fields functions
 
 def grid_map(obstacles, nrows=500, ncols=500):
-    """ Obstacles dicretized map """
+    """ Obstacles discretized map """
     grid = np.zeros((nrows, ncols));
     # rectangular obstacles
     for obstacle in obstacles:
@@ -93,8 +93,8 @@ def combined_potential(obstacles_grid, goal, influence_radius=2, attractive_coef
 #         next_point = current_point + dt*np.array( [vx, vy] )
 #         route = np.vstack( [route, next_point] )
 #     route = grid2meters(route)
-    
-    return route
+#     return route
+
 
 def gradient_planner_next(current_point, f, params):
     """

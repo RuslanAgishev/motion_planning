@@ -12,9 +12,9 @@ from potential_fields import *
 def move_obstacles(obstacles):
     # obstacles[3] += np.array([0.004, 0.005])
     # small cubes movement
-    obstacles[-3] += np.array([0.02, 0.0])
+    obstacles[-3] += np.array([0.03, 0.0])
     obstacles[-2] += np.array([-0.006, 0.006])
-    obstacles[-1] += np.array([0.0, 0.01])
+    obstacles[-1] += np.array([0.0, 0.02])
     return obstacles
 
 class Params:
@@ -29,10 +29,10 @@ class Params:
         self.world_bounds_y = [-2.5, 2.5] # [m], map size in Y-direction
         self.drone_vel = 2.0 # [m/s]
         self.ViconRate = 100 # [Hz]
-        self.max_sp_dist = 0.5 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
+        self.max_sp_dist = 0.15 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
         self.influence_radius = 1.3 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
-        self.num_robots = 4
+        self.num_robots = 8
 
 class Robot:
     def __init__(self):
@@ -50,14 +50,14 @@ class Robot:
 
 # Initialization
 params = Params()
-xy_start = np.array([1.2, 1.0])
+xy_start = np.array([1.4, 0.9])
 xy_goal =  np.array([1.5, -1.4])
 # Obstacles map construction
 obstacles = [
               # bugtrap
               np.array([[0.5, 0], [2.5, 0.], [2.5, 0.3], [0.5, 0.3]]),
               np.array([[0.5, 0.3], [0.8, 0.3], [0.8, 1.5], [0.5, 1.5]]),
-              np.array([[0.5, 1.5], [1.5, 1.5], [1.5, 1.8], [0.5, 1.8]]),
+              # np.array([[0.5, 1.5], [1.5, 1.5], [1.5, 1.8], [0.5, 1.8]]),
               # angle
               np.array([[-2, -2], [-0.5, -2], [-0.5, -1.8], [-2, -1.8]]),
               np.array([[-0.7, -1.8], [-0.5, -1.8], [-0.5, -0.8], [-0.7, -0.8]]),
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     P_long = rrt_path(obstacles, xy_start, xy_goal, params)
     P = ShortenPath(P_long, obstacles, smoothiters=30) # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
 
-    traj_global = waypts2setpts(P, params)
+    traj_global = waypts2setpts(P, params); P = np.vstack([P, xy_start])
     plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
     plt.pause(1.0)
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     robot1.route = np.array([traj_global[0,:]])
     robot1.sp = robot1.route[-1,:]
 
-    followers_sp = formation(params.num_robots, leader_des=robot1.sp, v=np.array([0,-0.3]), l=0.3)
+    followers_sp = formation(params.num_robots, leader_des=robot1.sp, v=np.array([0,-1.0]), l=0.3)
     for i in range(len(followers_sp)):
         robots[i+1].sp = followers_sp[i]
         robots[i+1].route = np.array([followers_sp[i]])
@@ -118,7 +118,9 @@ if __name__ == '__main__':
         """ adding following robots in the swarm """
         # formation poses from global planner
         followers_sp_global = formation(params.num_robots, robot1.sp_global, v=normalize(robot1.sp_global-robot1.sp), l=0.3)
-        for i in range(len(followers_sp_global)): robots[i+1].sp_global = followers_sp_global[i]
+        for i in range(len(followers_sp_global)):
+            robots[i+1].sp_global = followers_sp_global[i]
+
         for p in range(len(followers_sp)): # formation poses correction with local planner
             # robots repel from each other inside the formation
             robots_obstacles_sp = [x for i,x in enumerate(followers_sp + [robot1.sp]) if i!=p] # all poses except the robot[p]
@@ -129,15 +131,19 @@ if __name__ == '__main__':
             followers_sp[p] = robots[p+1].sp
 
 
-        # visualization
+        # vizualization
         plt.cla()
         draw_map(obstacles)
-        draw_gradient(robots[2].f)
-        for robot in robots: plt.plot(robot.sp[0], robot.sp[1], '^', color='blue', markersize=10, zorder=15) # robots poses
+        if params.num_robots == 1:
+            draw_gradient(robots[0].f)
+        else:
+            draw_gradient(robots[1].f)
+        for robot in robots[1:]: plt.plot(robot.sp[0], robot.sp[1], '^', color='blue', markersize=10, zorder=15) # robots poses
+        plt.plot(robot1.sp[0], robot1.sp[1], '^', color='green', markersize=10, zorder=15) # robots poses
         plt.plot(robot1.route[:,0], robot1.route[:,1], linewidth=2, color='green', label="Robot's path, corrected with local planner", zorder=10)
-        for robot in robots[1:]: plt.plot(robot.route[:,0], robot.route[:,1], '--', linewidth=2, color='green', zorder=10)
+        # for robot in robots[1:]: plt.plot(robot.route[:,0], robot.route[:,1], '--', linewidth=2, color='green', zorder=10)
         plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
-        plt.plot(traj_global[sp_ind,0], traj_global[sp_ind,1], 'ro', color='blue', markersize=7, label='Global planner setpoint')
+        for robot in robots[:1]: plt.plot(robot.sp_global[0], robot.sp_global[1], '*', color='green', markersize=7, label='Global planner setpoint')
         plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20, label='start')
         plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
         plt.legend()
