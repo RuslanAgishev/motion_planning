@@ -34,7 +34,7 @@ class RRT_Params:
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
         self.minDistGoal = 0.25 # [m], min distance os samples from goal to add goal node to the RRT
-        self.extension = 0.2 # [m], extension parameter: this controls how far the RRT extends in each step.
+        self.extension = 0.4 # [m], extension parameter: this controls how far the RRT extends in each step.
         self.world_bounds_x = [-2.5, 2.5] # [m], map size in X-direction
         self.world_bounds_y = [-2.5, 2.5] # [m], map size in Y-direction
 
@@ -61,14 +61,15 @@ obstacles = [
 draw_map(obstacles, params)
 
 # Start and goal positions
-xy_start = np.array([0.5, 0.5]);   plt.plot(xy_start[0], xy_start[1],'bo',color='red', markersize=20)
-xy_goal =  np.array([-1.5, 0.8]);  plt.plot(xy_goal[0],  xy_goal[1], 'bo',color='green',markersize=20)
-
+xy_start = np.array([0.5, 0.5]);   plt.plot(xy_start[0], xy_start[1],'bo',color='red', markersize=20, label='Start')
+xy_goal =  np.array([-1.5, 0.8]);  plt.plot(xy_goal[0],  xy_goal[1], 'bo',color='green',markersize=20, label='Goal')
+plt.legend()
 
 P = rrt_path(obstacles, xy_start, xy_goal, params)
+plt.plot( P[:,0], P[:,1], color='green', linewidth=5, label='Path from RRT' )
 print 'Path smoothing...'
-P_smooth = SmoothPath(P, obstacles, smoothiters=40)
-plt.plot(P_smooth[:,0], P_smooth[:,1], linewidth=5, color='orange', label='smoothed path')
+P_smooth = SmoothPath(P, obstacles, smoothiters=100)
+plt.plot(P_smooth[:,0], P_smooth[:,1], linewidth=5, color='orange', label='Shortened path')
 
 
 # TODO: setpoints from via-waypoints
@@ -96,4 +97,6 @@ for i in range(len(P_smooth)-1):
 # plt.plot(traj[:,0], traj[:,1], '.')
 
 
-if params.visualize: plt.show()
+if params.visualize:
+  plt.legend()
+  plt.show()
