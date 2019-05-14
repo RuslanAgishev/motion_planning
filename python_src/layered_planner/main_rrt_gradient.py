@@ -9,30 +9,30 @@ from rrt import *
 from potential_fields import *
 
 
-def move_obstacles(obstacles):
+def move_obstacles(obstacles, params):
     # obstacles[3] += np.array([0.004, 0.005])
     # small cubes movement
-    obstacles[-3] += np.array([0.03, 0.0])
-    obstacles[-2] += np.array([-0.006, 0.006])
-    obstacles[-1] += np.array([0.0, 0.02])
+    obstacles[-3] += np.array([0.02, 0.0]) * params.drone_vel
+    obstacles[-2] += np.array([-0.005, 0.005]) * params.drone_vel
+    obstacles[-1] += np.array([0.0, 0.01]) * params.drone_vel
     return obstacles
 
 class Params:
     def __init__(self):
         self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
-        self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
+        self.visualize = 0 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
         self.minDistGoal = 0.25 # [m], min distance os samples from goal to add goal node to the RRT
         self.extension = 0.4 # [m], extension parameter: this controls how far the RRT extends in each step.
         self.world_bounds_x = [-2.5, 2.5] # [m], map size in X-direction
         self.world_bounds_y = [-2.5, 2.5] # [m], map size in Y-direction
-        self.drone_vel = 2.0 # [m/s]
+        self.drone_vel = 4.0 # [m/s]
         self.ViconRate = 100 # [Hz]
         self.max_sp_dist = 0.15 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
         self.influence_radius = 1.3 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
-        self.num_robots = 8
+        self.num_robots = 6
         self.moving_obstacles = 1
 
 class Robot:
@@ -42,17 +42,21 @@ class Robot:
         self.route = np.array([self.sp])
         self.f = 0
         self.leader = False
+        self.vel_array = []
 
     def local_planner(self, obstacles, params):
         obstacles_grid = grid_map(obstacles)
         self.f = combined_potential(obstacles_grid, self.sp_global, params.influence_radius)
-        self.sp = gradient_planner_next(self.sp, self.f, params)
+        self.sp, self.vel = gradient_planner_next(self.sp, self.f, params)
+        self.vel_array.append(norm(self.vel))
         self.route = np.vstack( [self.route, self.sp] )
 
 # Initialization
 params = Params()
 xy_start = np.array([1.4, 0.9])
 xy_goal =  np.array([1.5, -1.4])
+# xy_goal = np.array([1.4, 1.2])
+
 # Obstacles map construction
 obstacles = [
               # bugtrap
@@ -87,6 +91,9 @@ for i in range(params.num_robots):
 robot1 = robots[0]; robot1.leader=True
 
 
+# postprocessing variables:
+mean_dists_array = []
+max_dists_array = []
 
 # Layered Motion Planning: RRT (global) + Potential Field (local)
 if __name__ == '__main__':
@@ -100,7 +107,7 @@ if __name__ == '__main__':
 
     traj_global = waypts2setpts(P, params); P = np.vstack([P, xy_start])
     plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
-    plt.pause(1.0)
+    plt.pause(0.1)
 
     sp_ind = 0
     robot1.route = np.array([traj_global[0,:]])
@@ -116,7 +123,7 @@ if __name__ == '__main__':
         if dist_to_goal < params.goal_tolerance: # [m]
             print 'Goal is reached'
             break
-        if params.moving_obstacles: obstacles = move_obstacles(obstacles) # change poses of some obstacles on the map
+        if params.moving_obstacles: obstacles = move_obstacles(obstacles, params) # change poses of some obstacles on the map
 
         # leader's setpoint from global planner
         robot1.sp_global = traj_global[sp_ind,:]
@@ -138,9 +145,20 @@ if __name__ == '__main__':
             robots[p+1].local_planner(obstacles1, params)
             followers_sp[p] = robots[p+1].sp
 
+        # centroid pose:
+        centroid = 0
+        for robot in robots:
+        	centroid += robot.sp / len(robots)
+        # dists to robots from the centroid:
+        dists = []
+        for robot in robots:
+        	dists.append( norm(centroid-robot.sp) )
+        mean_dists_array.append(np.mean(dists))
+        max_dists_array.append(np.max(dists))
 
         # vizualization
         plt.cla()
+        plt.plot(centroid[0], centroid[1], '*', color='blue', markersize=7)
         draw_map(obstacles)
         if params.num_robots == 1:
             draw_gradient(robots[0].f)
@@ -151,7 +169,7 @@ if __name__ == '__main__':
         plt.plot(robot1.route[:,0], robot1.route[:,1], linewidth=2, color='green', label="Robot's path, corrected with local planner", zorder=10)
         # for robot in robots[1:]: plt.plot(robot.route[:,0], robot.route[:,1], '--', linewidth=2, color='green', zorder=10)
         plt.plot(P[:,0], P[:,1], linewidth=3, color='orange', label='Global planner path')
-        for robot in robots[:1]: plt.plot(robot.sp_global[0], robot.sp_global[1], '*', color='green', markersize=7, label='Global planner setpoint')
+        for robot in robots[:1]: plt.plot(robot.sp_global[0], robot.sp_global[1], 'ro', color='green', markersize=7, label='Global planner setpoint')
         plt.plot(xy_start[0],xy_start[1],'bo',color='red', markersize=20, label='start')
         plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
         plt.legend()
@@ -162,8 +180,24 @@ if __name__ == '__main__':
         if sp_ind < traj_global.shape[0]-1 and norm(robot1.sp_global - robot1.sp) < params.max_sp_dist: sp_ind += 1
 
 
-    # close windows if Enter-button is pressed
-    plt.draw()
-    plt.pause(0.1)
-    raw_input('Hit Enter to close')
-    plt.close('all')
+print('Postprocessing...')
+plt.figure()
+plt.title('Robots velocities')
+plt.plot(robot1.vel_array, label='leader')
+for i in range(1,len(robots)): plt.plot(robots[i].vel_array, '--', label='follower %d' %i)
+plt.legend()
+plt.grid()
+
+
+plt.figure()
+plt.plot(mean_dists_array, label='mean swarm size')
+plt.plot(max_dists_array, label='max swarm size')
+plt.legend()
+plt.grid()
+
+
+# close windows if Enter-button is pressed
+plt.draw()
+plt.pause(0.1)
+raw_input('Hit Enter to close')
+plt.close('all')

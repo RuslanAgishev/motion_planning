@@ -7,54 +7,20 @@ from random import random
 from scipy.spatial import ConvexHull
 from matplotlib import path
 import time
-
-
-# Helper functions
-def isCollisionFreeVertex(obstacles, xy):
-    collFree = True
-
-    for obstacle in obstacles:
-        hull = path.Path(obstacle)
-        collFree = not hull.contains_points([xy])
-        if hull.contains_points([xy]):
-#             print 'collision'
-            return collFree
-
-    return collFree
-
-def isCollisionFreeEdge(obstacles, closest_vert, xy):
-    closest_vert = np.array(closest_vert); xy = np.array(xy)
-    collFree = True
-    l = norm(closest_vert - xy)
-    map_resolution = 0.01; M = int(l / map_resolution)
-    if M <= 2: M = 20
-    t = np.linspace(0,1,M)
-    for i in range(1,M-1):
-        p = (1-t[i])*closest_vert + t[i]*xy # calculate configuration
-        collFree = isCollisionFreeVertex(obstacles, p) 
-        if collFree == False: return False
-
-    return collFree
-
-
-# RRT algorithm
 from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
+from tools import init_fonts
 
-def isCollisionFreeVertex(obstacle, point):
+def isCollisionFreeVertex(obstacles, point):
     x,y,z = point
-    dx, dy, dz = obstacle.dimensions
-    x0, y0, z0 = obstacle.pose
-    if abs(x-x0)<=dx/2 and abs(y-y0)<=dy/2 and abs(z-z0)<=dz/2:
-        return 0
-    else:
-        return 1
+    for obstacle in obstacles:
+	    dx, dy, dz = obstacle.dimensions
+	    x0, y0, z0 = obstacle.pose
+	    if abs(x-x0)<=dx/2 and abs(y-y0)<=dy/2 and abs(z-z0)<=dz/2:
+	        return 0
+    return 1
 
-
-# In[50]:
-
-
-def isCollisionFreeEdge(obstacle, closest_vert, p):
+def isCollisionFreeEdge(obstacles, closest_vert, p):
     closest_vert = np.array(closest_vert); p = np.array(p)
     collFree = True
     l = norm(closest_vert - p)
@@ -63,13 +29,10 @@ def isCollisionFreeEdge(obstacle, closest_vert, p):
     t = np.linspace(0,1,M)
     for i in range(1,M-1):
         point = (1-t[i])*closest_vert + t[i]*p # calculate configuration
-        collFree = isCollisionFreeVertex(obstacle, point) 
+        collFree = isCollisionFreeVertex(obstacles, point) 
         if collFree == False: return False
 
     return collFree
-
-
-# In[5]:
 
 
 class Node3D:
@@ -77,9 +40,6 @@ class Node3D:
         self.p     = [0, 0, 0]
         self.i     = 0
         self.iPrev = 0
-
-
-# In[6]:
 
 
 def closestNode3D(rrt, p):
@@ -95,23 +55,16 @@ def closestNode3D(rrt, p):
     return closest_node
 
 
-# In[7]:
-
-
 def plot_point3D(p, color='blue'):
     ax.scatter3D(p[0], p[1], p[2], color=color)
 
 
-# # Add Obstacles
-
-# In[70]:
-
-
+# Add Obstacles
 class Parallelepiped:
     def __init__(self):
         self.dimensions = [0,0,0]
         self.pose = [0,0,0]
-        self.verts = np.zeros([6,4,3])
+        self.verts = self.vertixes()
         
     def vertixes(self):
         dx = self.dimensions[0]
@@ -137,23 +90,32 @@ class Parallelepiped:
                   [Z[1], Z[2], Z[6], Z[5]],
                   [Z[4], Z[7], Z[3], Z[0]] ]
 
-        # plot sides
-    #     if plot:
-    #         ax.add_collection3d(Poly3DCollection(verts, facecolors='b', linewidths=1, edgecolors='k', alpha=.25))
-    #         plt.show()
         return verts
 
-
-# In[71]:
-
-
-def draw_parallelepiped(verts):
-    ax.add_collection3d(Poly3DCollection(verts, facecolors='k', linewidths=1, edgecolors='k', alpha=.25))
+    def draw(self, ax):
+        ax.add_collection3d(Poly3DCollection(self.vertixes(), facecolors='b', linewidths=1, edgecolors='k', alpha=.25))
 
 
-# In[73]:
+### Obstacles ###
+def add_obstacle(obstacles, pose, dim):
+	obstacle = Parallelepiped()
+	obstacle.dimensions = dim
+	obstacle.pose = pose
+	obstacles.append(obstacle)
+	return obstacles
 
+# obstacles_poses = [ [-0.8, 0., 1.5], [ 1., 0., 1.5], [ 0., 1., 1.5], [ 0.,-1., 1.5] ]
+# obstacles_dims  = [ [1.4, 1.0, 0.2], [1.0, 1.0, 0.2], [3.0, 1.0, 0.2], [3.0, 1.0, 0.2] ]
 
+obstacles_poses = [ [-0.8, 0., 1.5], [ 0., 1., 1.5], [ 0.,-1., 1.5] ]
+obstacles_dims  = [ [1.4, 1.0, 0.2], [3.0, 1.0, 0.2], [3.0, 1.0, 0.2] ]
+
+obstacles = []
+for pose, dim in zip(obstacles_poses, obstacles_dims):
+	obstacles = add_obstacle(obstacles, pose, dim)
+##################
+
+init_fonts()
 fig = plt.figure(figsize=(15,15))
 ax = plt.axes(projection='3d')
 ax.set_xlabel('X, [m]')
@@ -163,21 +125,17 @@ ax.set_xlim([-2.5, 2.5])
 ax.set_ylim([-2.5, 2.5])
 ax.set_zlim([0.0, 3.0])
 
-obstacle = Parallelepiped()
-obstacle.dimensions = [2.5,2.5,0.2]
-obstacle.pose = [0,0,1.5]
-draw_parallelepiped(obstacle.vertixes())
-
+for obstacle in obstacles: obstacle.draw(ax)
 
 # RRT Initialization
 maxiters  = 500
 nearGoal = False # This will be set to true if goal has been reached
 minDistGoal = 0.05 # Convergence criterion: success when the tree reaches within 0.25 in distance from the goal.
-d = 0.60 # Extension parameter: this controls how far the RRT extends in each step.
+d = 0.5 # [m], Extension parameter: this controls how far the RRT extends in each step.
 
 # Start and goal positions
 start = np.array([0.0, 0.0, 0.0]); ax.scatter3D(start[0], start[1], start[2], color='green', s=100)
-goal =  np.array([0.0, 0.0, 2.0]);  ax.scatter3D(goal[0], goal[1], goal[2], color='red', s=100)
+goal =  np.array([0.0, 1.0, 2.5]);  ax.scatter3D(goal[0], goal[1], goal[2], color='red', s=100)
 
 # Initialize RRT. The RRT will be represented as a 2 x N list of points.
 # So each column represents a vertex of the tree.
@@ -196,13 +154,13 @@ while not nearGoal and iters < maxiters:
     # Sample point
     rnd = random()
     # With probability 0.05, sample the goal. This promotes movement to the goal.
-    if rnd < 0.05:
+    if rnd < 0.10:
         p = goal
     else:
         p = np.array([random()*5-2.5, random()*5-2.5, random()*3]) # Should be a 3 x 1 vector
         
     # Check if sample is collision free
-    collFree = isCollisionFreeVertex(obstacle, p)
+    collFree = isCollisionFreeVertex(obstacles, p)
     # If it's not collision free, continue with loop
     if not collFree:
         iters += 1
@@ -222,11 +180,11 @@ while not nearGoal and iters < maxiters:
 
 #     plot_point3D(p, 'red')
 #     plot_point3D(new_node.p, color='blue')
-    ax.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], [closest_node.p[2], new_node.p[2]],color = 'b')
+    ax.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], [closest_node.p[2], new_node.p[2]],color = 'k', zorder=5)
     plt.pause(0.01)
     
     # Check if new vertice is in collision
-    collFree = isCollisionFreeEdge(obstacle, closest_node.p, new_node.p)
+    collFree = isCollisionFreeEdge(obstacles, closest_node.p, new_node.p)
     # If it's not collision free, continue with loop
     if not collFree:
         iters += 1
@@ -242,7 +200,7 @@ while not nearGoal and iters < maxiters:
         goal_node.p = goal
         goal_node.i = len(rrt)
         goal_node.iPrev = new_node.i
-        if isCollisionFreeEdge(obstacle, new_node.p, goal_node.p):
+        if isCollisionFreeEdge(obstacles, new_node.p, goal_node.p):
             rrt.append(goal_node)
             P = [goal_node.p]
         else: P = []
@@ -267,7 +225,7 @@ while True:
 P = np.array(P)
 # drawing a path from RRT
 for i in range(P.shape[0]-1):
-    ax.plot([P[i,0], P[i+1,0]], [P[i,1], P[i+1,1]], [P[i,2], P[i+1,2]], color = 'g', linewidth=5)
+    ax.plot([P[i,0], P[i+1,0]], [P[i,1], P[i+1,1]], [P[i,2], P[i+1,2]], color = 'g', linewidth=5, zorder=10)
     
 plt.show()  
 

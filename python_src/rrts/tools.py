@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib.patches import Polygon
 from scipy.spatial import ConvexHull
 from matplotlib import path
+import matplotlib.pyplot as plt
 from numpy.linalg import norm
 
 
@@ -32,3 +33,17 @@ def isCollisionFreeEdge(obstacles, closest_vert, xy):
         if collFree == False: return False
 
     return collFree
+
+
+def init_fonts():
+    SMALL_SIZE = 12
+    MEDIUM_SIZE = 16
+    BIGGER_SIZE = 26
+
+    plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+    plt.rc('axes', titlesize=BIGGER_SIZE)    # fontsize of the axes title
+    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=MEDIUM_SIZE)   # legend fontsize
+    plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
