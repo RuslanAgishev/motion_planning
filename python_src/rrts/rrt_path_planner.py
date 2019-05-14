@@ -127,6 +127,5 @@ def rrt_path(obstacles, xy_start, xy_goal, params):
             print 'Reached RRT start node'
             break
     P = np.array(P)
-    plt.plot( P[:,0], P[:,1], color='green', linewidth=5 )
 
     return P

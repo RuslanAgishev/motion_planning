@@ -19,8 +19,8 @@ def move_obstacles(obstacles, params):
 
 class Params:
     def __init__(self):
-        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
-        self.visualize = 0 # show constructed paths at the end of the RRT and path smoothing algorithms
+        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
         self.minDistGoal = 0.25 # [m], min distance os samples from goal to add goal node to the RRT
@@ -29,15 +29,16 @@ class Params:
         self.world_bounds_y = [-2.5, 2.5] # [m], map size in Y-direction
         self.drone_vel = 4.0 # [m/s]
         self.ViconRate = 100 # [Hz]
-        self.max_sp_dist = 0.15 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
-        self.influence_radius = 1.3 # potential fields radius, defining repulsive area size near the obstacle
+        self.max_sp_dist = 0.3 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
+        self.influence_radius = 1.22 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
-        self.num_robots = 6
-        self.moving_obstacles = 1
+        self.num_robots = 4
+        self.moving_obstacles = 0 # move small cubic obstacles or not
+
 
 class Robot:
     def __init__(self):
-        self.sp = [0,0]
+        self.sp = [0, 0]
         self.sp_global = [0,0]
         self.route = np.array([self.sp])
         self.f = 0
@@ -51,39 +52,49 @@ class Robot:
         self.vel_array.append(norm(self.vel))
         self.route = np.vstack( [self.route, self.sp] )
 
+
 # Initialization
 params = Params()
 xy_start = np.array([1.4, 0.9])
 xy_goal =  np.array([1.5, -1.4])
 # xy_goal = np.array([1.4, 1.2])
 
-# Obstacles map construction
-obstacles = [
-              # bugtrap
-              np.array([[0.5, 0], [2.5, 0.], [2.5, 0.3], [0.5, 0.3]]),
-              np.array([[0.5, 0.3], [0.8, 0.3], [0.8, 1.5], [0.5, 1.5]]),
-              # np.array([[0.5, 1.5], [1.5, 1.5], [1.5, 1.8], [0.5, 1.8]]),
-              # angle
-              np.array([[-2, -2], [-0.5, -2], [-0.5, -1.8], [-2, -1.8]]),
-              np.array([[-0.7, -1.8], [-0.5, -1.8], [-0.5, -0.8], [-0.7, -0.8]]),
-              # walls
-              np.array([[-2.5, -2.5], [2.5, -2.5], [2.5, -2.49], [-2.5, -2.49]]),
-              np.array([[-2.5, 2.49], [2.5, 2.49], [2.5, 2.5], [-2.5, 2.5]]),
-              np.array([[-2.5, -2.49], [-2.49, -2.49], [-2.49, 2.49], [-2.5, 2.49]]),
-              np.array([[2.49, -2.49], [2.5, -2.49], [2.5, 2.49], [2.49, 2.49]]),
 
-              # moving obstacle
-              np.array([[-2.3, 2.0], [-2.2, 2.0], [-2.2, 2.1], [-2.3, 2.1]]),
-              np.array([[2.3, -2.3], [2.4, -2.3], [2.4, -2.2], [2.3, -2.2]]),
-              np.array([[0.0, -2.3], [0.1, -2.3], [0.1, -2.2], [0.0, -2.2]]),
-            ]
-
-# passage_width = 0.2
+""" Obstacles map construction """
 # obstacles = [
-# 			  # narrow passage
-#               np.array([[-2.5, -0.5], [-0.9-passage_width/2., -0.5], [-0.9-passage_width/2., 0.5], [-2.5, 0.5]]),
-#               np.array([[-0.9+passage_width/2., -0.5], [2.5, -0.5], [2.5, 0.5], [-0.9+passage_width/2., 0.5]]),
-# 			]
+#               # bugtrap
+#               np.array([[0.5, 0], [2.5, 0.], [2.5, 0.3], [0.5, 0.3]]),
+#               np.array([[0.5, 0.3], [0.8, 0.3], [0.8, 1.5], [0.5, 1.5]]),
+#               # np.array([[0.5, 1.5], [1.5, 1.5], [1.5, 1.8], [0.5, 1.8]]),
+#               # angle
+#               np.array([[-2, -2], [-0.5, -2], [-0.5, -1.8], [-2, -1.8]]),
+#               np.array([[-0.7, -1.8], [-0.5, -1.8], [-0.5, -0.8], [-0.7, -0.8]]),
+#               # walls
+#               np.array([[-2.5, -2.5], [2.5, -2.5], [2.5, -2.49], [-2.5, -2.49]]),
+#               np.array([[-2.5, 2.49], [2.5, 2.49], [2.5, 2.5], [-2.5, 2.5]]),
+#               np.array([[-2.5, -2.49], [-2.49, -2.49], [-2.49, 2.49], [-2.5, 2.49]]),
+#               np.array([[2.49, -2.49], [2.5, -2.49], [2.5, 2.49], [2.49, 2.49]]),
+
+#               np.array([[-1.0, 2.0], [0.5, 2.0], [0.5, 2.5], [-1.0, 2.5]]), # my table
+#               np.array([[-1.0, 2.0], [0.5, 2.0], [0.5, 2.5], [-1.0, 2.5]]) + np.array([2.0, 0]), # Evgeny's table
+#               np.array([[-2.0, -0.5], [-2.0, 1.0], [-2.5, 1.0], [-2.5, -0.5]]), # Roman's table
+#               np.array([[-1.2, -1.2], [-1.2, -2.5], [-2.5, -2.5], [-2.5, -1.2]]), # mats
+#               np.array([[2.0, 0.8], [2.0, -0.8], [2.5, -0.8], [2.5, 0.8]]), # Mocap table
+
+
+#               # moving obstacle
+#               np.array([[-2.3, 2.0], [-2.2, 2.0], [-2.2, 2.1], [-2.3, 2.1]]),
+#               np.array([[2.3, -2.3], [2.4, -2.3], [2.4, -2.2], [2.3, -2.2]]),
+#               np.array([[0.0, -2.3], [0.1, -2.3], [0.1, -2.2], [0.0, -2.2]]),
+#             ]
+
+passage_width = 0.25
+passage_location = 0.0
+obstacles = [
+            # narrow passage
+              np.array([[-2.5, -0.5], [-passage_location-passage_width/2., -0.5], [-passage_location-passage_width/2., 0.5], [-2.5, 0.5]]),
+              np.array([[-passage_location+passage_width/2., -0.5], [2.5, -0.5], [2.5, 0.5], [-passage_location+passage_width/2., 0.5]]),
+            ]
 
 robots = []
 for i in range(params.num_robots):
@@ -103,6 +114,8 @@ if __name__ == '__main__':
     plt.plot(xy_goal[0], xy_goal[1],'bo',color='green', markersize=20, label='goal')
 
     P_long = rrt_path(obstacles, xy_start, xy_goal, params)
+    # plt.plot(P_long[:,0], P_long[:,1], linewidth=3, color='green', label='Global planner path')
+    # plt.pause(1.0)
     P = ShortenPath(P_long, obstacles, smoothiters=30) # P = [[xN, yN], ..., [x1, y1], [x0, y0]]
 
     traj_global = waypts2setpts(P, params); P = np.vstack([P, xy_start])
