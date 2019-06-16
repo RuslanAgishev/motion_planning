@@ -10,6 +10,7 @@ import time
 from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 from tools import init_fonts
+from path_shortening import shorten_path
 
 def isCollisionFreeVertex(obstacles, point):
     x,y,z = point
@@ -93,7 +94,7 @@ class Parallelepiped:
         return verts
 
     def draw(self, ax):
-        ax.add_collection3d(Poly3DCollection(self.vertixes(), facecolors='b', linewidths=1, edgecolors='k', alpha=.25))
+        ax.add_collection3d(Poly3DCollection(self.vertixes(), facecolors='k', linewidths=1, edgecolors='k', alpha=.25))
 
 
 ### Obstacles ###
@@ -108,7 +109,7 @@ def add_obstacle(obstacles, pose, dim):
 # obstacles_dims  = [ [1.4, 1.0, 0.2], [1.0, 1.0, 0.2], [3.0, 1.0, 0.2], [3.0, 1.0, 0.2] ]
 
 obstacles_poses = [ [-0.8, 0., 1.5], [ 0., 1., 1.5], [ 0.,-1., 1.5] ]
-obstacles_dims  = [ [1.4, 1.0, 0.2], [3.0, 1.0, 0.2], [3.0, 1.0, 0.2] ]
+obstacles_dims  = [ [1.4, 1.0, 0.3], [3.0, 1.0, 0.3], [3.0, 1.0, 0.3] ]
 
 obstacles = []
 for pose, dim in zip(obstacles_poses, obstacles_dims):
@@ -127,6 +128,9 @@ ax.set_zlim([0.0, 3.0])
 
 for obstacle in obstacles: obstacle.draw(ax)
 
+# parameters
+animate = 1
+
 # RRT Initialization
 maxiters  = 500
 nearGoal = False # This will be set to true if goal has been reached
@@ -135,7 +139,7 @@ d = 0.5 # [m], Extension parameter: this controls how far the RRT extends in eac
 
 # Start and goal positions
 start = np.array([0.0, 0.0, 0.0]); ax.scatter3D(start[0], start[1], start[2], color='green', s=100)
-goal =  np.array([0.0, 1.0, 2.5]);  ax.scatter3D(goal[0], goal[1], goal[2], color='red', s=100)
+goal =  np.array([0.0, 0.5, 2.5]);  ax.scatter3D(goal[0], goal[1], goal[2], color='red', s=100)
 
 # Initialize RRT. The RRT will be represented as a 2 x N list of points.
 # So each column represents a vertex of the tree.
@@ -178,10 +182,9 @@ while not nearGoal and iters < maxiters:
     new_node.i = len(rrt)
     new_node.iPrev = closest_node.i
 
-#     plot_point3D(p, 'red')
-#     plot_point3D(new_node.p, color='blue')
-    ax.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], [closest_node.p[2], new_node.p[2]],color = 'k', zorder=5)
-    plt.pause(0.01)
+    if animate:
+        ax.plot([closest_node.p[0], new_node.p[0]], [closest_node.p[1], new_node.p[1]], [closest_node.p[2], new_node.p[2]],color = 'b', zorder=5)
+        plt.pause(0.01)
     
     # Check if new vertice is in collision
     collFree = isCollisionFreeEdge(obstacles, closest_node.p, new_node.p)
@@ -226,6 +229,12 @@ P = np.array(P)
 # drawing a path from RRT
 for i in range(P.shape[0]-1):
     ax.plot([P[i,0], P[i+1,0]], [P[i,1], P[i+1,1]], [P[i,2], P[i+1,2]], color = 'g', linewidth=5, zorder=10)
-    
+
+# shortened path
+print ('Shortening the path...')
+P = shorten_path(P, obstacles, smoothiters=100)
+for i in range(P.shape[0]-1):
+    ax.plot([P[i,0], P[i+1,0]], [P[i,1], P[i+1,1]], [P[i,2], P[i+1,2]], color = 'orange', linewidth=5, zorder=15)
+
 plt.show()  
 
