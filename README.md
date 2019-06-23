@@ -1,5 +1,5 @@
 # Motion Planning
-Computational Motion Planning course from Penn. Matlab implementation of the tasks can be found in matlab_src folder.
+[Computational Motion Planning](https://www.coursera.org/learn/robotics-motion-planning) course from Penn. Matlab implementation of the tasks can be found in matlab_src folder.
 Each of the subfolder includes run.m script for simulation launching and subfunctions.
 In order to launch the algorithms simply execute:
 ```matlab
