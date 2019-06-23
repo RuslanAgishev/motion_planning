@@ -7,7 +7,8 @@ run.m
 ```
 in your Matlab command line.
 
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt3D.png" width="240"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="240"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner4_traj.png" width="240"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt3D.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner4_traj.png" width="500"/>
 
 Python code that is aimed to apply path planning algorithms for real mobile robots is located in pthon_src folder.
 In order to get familiar with the Artificial Potential Filds (APF) algorithm:
