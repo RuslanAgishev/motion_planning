@@ -32,7 +32,7 @@ class Params:
         self.max_sp_dist = 0.3 * self.drone_vel # [m], maximum distance between current robot's pose and the sp from global planner
         self.influence_radius = 1.22 # potential fields radius, defining repulsive area size near the obstacle
         self.goal_tolerance = 0.05 # [m], maximum distance threshold to reach the goal
-        self.num_robots = 4
+        self.num_robots = 3
         self.moving_obstacles = 0 # move small cubic obstacles or not
 
 
