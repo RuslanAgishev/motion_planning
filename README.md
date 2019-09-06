@@ -1,4 +1,5 @@
 # Motion Planning
+
 [Computational Motion Planning](https://www.coursera.org/learn/robotics-motion-planning) course from Penn. Matlab implementation of the tasks can be found in matlab_src folder.
 Each of the subfolder includes run.m script for simulation launching and subfunctions.
 In order to launch the algorithms simply execute:
@@ -32,3 +33,5 @@ python python_src/rrts/3D/rrt3D.py
 ```bash
 python python_src/layered_planner/main_rrt_gradient.py
 ```
+
+
