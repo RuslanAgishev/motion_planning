@@ -15,13 +15,13 @@ from matplotlib.patches import Polygon
 
 
 class GridMap:
-    def __init__(self):
+    def __init__(self, flight_area_vertices):
         self.map_center = np.array([0.0, 0.0])
-        self.map_width_m = 2.0
-        self.map_length_m = 2.0
+        self.map_width_m = 5.0
+        self.map_length_m = 5.0
         self.map_resolution_m = 0.01 # [m]
         self.sensor_range_m = 0.1
-        self.flight_area_vertices = [[-0.6, 0.8], [-0.9, -0.9], [0.8, -0.8], [0.5, 0.9]]
+        self.flight_area_vertices = flight_area_vertices
         
         self.create_borders_grid_map()
 
@@ -33,7 +33,7 @@ class GridMap:
         points = self.meters2grid(self.flight_area_vertices).tolist()
         points.append(points[0])
         for i in range(len(points)-1):
-            xs.append(points[i][0]); ys.append(points[i][1]);
+            xs.append(points[i][1]); ys.append(points[i][0]);
             line = bresenham(points[i], points[i+1])
             for l in line:
                 gmap[l[1]][l[0]] = 0

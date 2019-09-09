@@ -10,7 +10,6 @@ reference: https://ieeexplore.ieee.org/abstract/document/6850799/s
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import numpy as np
-from collections import deque
 from grid_map import GridMap
     
 
@@ -99,7 +98,7 @@ class Params:
 	def __init__(self):
 		self.simulation_time = 10 # [sec]
 		self.numiters = 1000
-		self.animate = 1
+		self.animate = 0
 		self.vel = 0.5 # [m/s]
 
 
@@ -110,10 +109,14 @@ def main():
 		np.array([[0.7, -0.9], [0.8, -0.9], [0.8, -0.3], [0.7, -0.3]]) + np.array([-1.0, 0.5]),        
 	]
 	params = Params()
-	gridmap = GridMap()
+	flight_area_vertices = np.array([[-0.6, 0.8], [-0.9, -0.9], [0.8, -0.8], [0.5, 0.9]])
+	gridmap = GridMap(flight_area_vertices)
 	gridmap.add_obstacles_to_grid_map(obstacles)
+
 	#    x,    y,      yaw
-	pose = [0.2, 0.5, -np.pi/3]
+	pose = [np.mean(flight_area_vertices[:,0]),
+			np.mean(flight_area_vertices[:,1]),
+			-np.pi/3]
 	traj = pose[:2]
 	plt.figure(figsize=(10,10))
 	gridmap.draw_map(obstacles)
