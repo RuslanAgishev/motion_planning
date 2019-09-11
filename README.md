@@ -33,5 +33,11 @@ python python_src/rrts/3D/rrt3D.py
 ```bash
 python python_src/layered_planner/main_rrt_gradient.py
 ```
-
-
+- Exploration of the environment with inknown obstacles location. Random walk algorithm implementation for a mobile robot
+equipped with 4 ranger sensors (front, back, left and right) for obstacles detection.
+```bash
+python python_src/random_goals_following/main.py
+```
+```bash
+python python_src/random_walk/main.py
+```
