@@ -41,5 +41,4 @@ python python_src/random_goals_following/main.py
 ```bash
 python python_src/random_walk/main.py
 ```
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_goals_following.png" width="350"/>
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="350"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_goals_following.png" width="350"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="350"/>
