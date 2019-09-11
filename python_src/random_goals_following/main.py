@@ -16,10 +16,10 @@ from grid_map import GridMap
 
 def plot_robot(pose, params):
 	r = params.sensor_range_m
-	# plt.plot([pose[0]-r*np.cos(pose[2]), pose[0]+r*np.cos(pose[2])],
-	# 		 [pose[1]-r*np.sin(pose[2]), pose[1]+r*np.sin(pose[2])], '--', color='b')
-	# plt.plot([pose[0]-r*np.cos(pose[2]+np.pi/2), pose[0]+r*np.cos(pose[2]+np.pi/2)],
-	# 	     [pose[1]-r*np.sin(pose[2]+np.pi/2), pose[1]+r*np.sin(pose[2]+np.pi/2)], '--', color='b')
+	plt.plot([pose[0]-r*np.cos(pose[2]), pose[0]+r*np.cos(pose[2])],
+			 [pose[1]-r*np.sin(pose[2]), pose[1]+r*np.sin(pose[2])], '--', color='b')
+	plt.plot([pose[0]-r*np.cos(pose[2]+np.pi/2), pose[0]+r*np.cos(pose[2]+np.pi/2)],
+		     [pose[1]-r*np.sin(pose[2]+np.pi/2), pose[1]+r*np.sin(pose[2]+np.pi/2)], '--', color='b')
 	plt.plot(pose[0], pose[1], 'ro', markersize=5)
 	plt.arrow(pose[0], pose[1], 0.05 * np.cos(pose[2]), 0.05 * np.sin(pose[2]),
               head_length=0.1, head_width=0.1)
@@ -135,7 +135,6 @@ class Params:
 		self.simulation_time = 10 # [sec]
 		self.numiters = 500
 		self.animate = 1
-		self.vel = 0.5 # [m/s]
 		self.dt = 0.1
 		self.goal_tol = 0.25
 		self.max_vel = 0.5 # m/s
@@ -157,13 +156,11 @@ def main():
 	# goal = [x, y], m
 	goal = np.array([0.5, 0.9])
 	# initial state = [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
-	state = np.array([-1.0, -1.0, 0.0, 0.0, 0.0])
+	state = np.array([-1.0, -1.0, np.pi/2, 0.0, 0.0])
 
 	traj = state[:2]
 	plt.figure(figsize=(10,10))
 	gridmap.draw_map(obstacles)
-
-	
 
 	# while True:
 	for _ in range(params.numiters):

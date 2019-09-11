@@ -97,7 +97,7 @@ def visualize(traj, pose, gridmap_params):
 class Params:
 	def __init__(self):
 		self.simulation_time = 10 # [sec]
-		self.numiters = 1000
+		self.numiters = 5000
 		self.animate = 0
 		self.vel = 0.5 # [m/s]
 
@@ -109,7 +109,7 @@ def main():
 		np.array([[0.7, -0.9], [0.8, -0.9], [0.8, -0.3], [0.7, -0.3]]) + np.array([-1.0, 0.5]),        
 	]
 	params = Params()
-	flight_area_vertices = np.array([[-0.6, 0.8], [-0.9, -0.9], [0.8, -0.8], [0.5, 0.9]])
+	flight_area_vertices = 2*np.array([[-0.6, 0.8], [-0.9, -0.9], [0.8, -0.8], [0.5, 0.9]])
 	gridmap = GridMap(flight_area_vertices)
 	gridmap.add_obstacles_to_grid_map(obstacles)
 
