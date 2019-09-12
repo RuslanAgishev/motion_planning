@@ -41,4 +41,7 @@ python python_src/random_goals_following/main.py
 ```bash
 python python_src/random_walk/main.py
 ```
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_goals_following.png" width="350"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="350"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_goals_following.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="400"/>
+
+- Mapping of the unknown environment using one or swarm of robots equipped with 4 ranger sensors. Localization data and scans are given in csv-files.
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/mapping/2_drones_multiranger_map.png" width="400"/>
