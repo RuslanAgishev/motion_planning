@@ -36,12 +36,18 @@ python python_src/layered_planner/main_rrt_gradient.py
 - Exploration of the environment with inknown obstacles location. Random walk algorithm implementation for a mobile robot
 equipped with 4 ranger sensors (front, back, left and right) for obstacles detection.
 ```bash
-python python_src/random_goals_following/main.py
+python python_src/exploration/random_goals_following/main.py
 ```
 ```bash
-python python_src/random_walk/main.py
+python python_src/exploration/random_walk/main.py
 ```
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_goals_following.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="400"/>
+
+- Coverage path planning for unknown map exploration. Robot's kinematics is taken into account in velocity motion model.
+```bash
+python python_src/exploration/coverage_path_planning/main.py
+```
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/autonomous_exploration.gif" width="400"/>
 
 - Mapping of the unknown environment using one or swarm of robots equipped with 4 ranger sensors. Localization data and scans are given in csv-files.
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/mapping/2_drones_multiranger_map.png" width="400"/>
