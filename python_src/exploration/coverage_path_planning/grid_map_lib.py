@@ -213,7 +213,6 @@ class GridMap:
             fig, ax = plt.subplots()
         heat_map = ax.pcolor(grid_data, cmap="Blues", vmin=0.0, vmax=1.0)
         plt.axis("equal")
-        # plt.show()
 
         return heat_map
 

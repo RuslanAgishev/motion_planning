@@ -15,28 +15,27 @@ from matplotlib.patches import Polygon
 
 
 class GridMap:
-    def __init__(self, flight_area_vertices):
+    def __init__(self, polygon_vertices, point_inside_polygon=[0,0]):
         self.map_center = np.array([0.0, 0.0])
         self.map_width_m = 5.0
         self.map_length_m = 5.0
         self.map_resolution_m = 0.01 # [m]
-        self.flight_area_vertices = flight_area_vertices
+        self.flight_area_vertices = polygon_vertices
         
-        self.create_borders_grid_map()
+        self.create_borders_grid_map(point_inside_polygon)
 
-    def create_borders_grid_map(self):
+    def create_borders_grid_map(self, polygon_center):
         WIDTH = int((self.map_width_m) / self.map_resolution_m)
         LENGTH = int((self.map_length_m) / self.map_resolution_m)
         gmap = np.ones([WIDTH, LENGTH])
-        xs = []; ys = []
         points = self.meters2grid(self.flight_area_vertices).tolist()
         points.append(points[0])
         for i in range(len(points)-1):
-            xs.append(points[i][1]); ys.append(points[i][0]);
             line = bresenham(points[i], points[i+1])
             for l in line:
                 gmap[l[1]][l[0]] = 0
-        gmap = flood_fill((int(np.mean(xs)), int(np.mean(ys))), gmap)
+        polygon_center_grid = np.array( self.meters2grid(polygon_center), dtype=int )
+        gmap = flood_fill(polygon_center_grid, gmap)
         self.gmap = gmap
 
     def add_obstacles_to_grid_map(self, obstacles):

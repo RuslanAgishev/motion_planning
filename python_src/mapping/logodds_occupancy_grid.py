@@ -64,8 +64,8 @@ def visualize(G, robotX, robotY):
 
 def preprocessing(poses, scans):
     # remove points without movement
-    poses = poses[500:3200, :]
-    scans = scans[500:3200, :]
+    # poses = poses[500:3200, :]
+    # scans = scans[500:3200, :]
 
     # remove nan-values from scans array
     scans_global = []

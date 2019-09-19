@@ -228,8 +228,6 @@ def sweep_path_search(sweep_searcher, gmap, grid_search_animation=False):
             gmap.plot_grid_map(ax=ax)
             plt.pause(1.0)
 
-    gmap.plot_grid_map()
-
     return px, py
 
 
