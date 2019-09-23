@@ -8,22 +8,28 @@ author: Ruslan Agishev (agishev_ruslan@mail.ru)
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
+from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 import numpy as np
 import math
 from grid_map import GridMap
 from grid_based_sweep_coverage_path_planner import planning
 import time
 from tools import define_polygon, polygon_contains_point
+from tqdm import tqdm
 
-def plot_robot(pose, params):
+def plot_robot(ax, pose, params):
 	r = params.sensor_range_m
-	plt.plot([pose[0]-r*np.cos(pose[2]), pose[0]+r*np.cos(pose[2])],
-			 [pose[1]-r*np.sin(pose[2]), pose[1]+r*np.sin(pose[2])], '--', color='b')
-	plt.plot([pose[0]-r*np.cos(pose[2]+np.pi/2), pose[0]+r*np.cos(pose[2]+np.pi/2)],
-		     [pose[1]-r*np.sin(pose[2]+np.pi/2), pose[1]+r*np.sin(pose[2]+np.pi/2)], '--', color='b')
-	plt.plot(pose[0], pose[1], 'ro', markersize=5)
-	plt.arrow(pose[0], pose[1], 0.05 * np.cos(pose[2]), 0.05 * np.sin(pose[2]),
-              head_length=0.1, head_width=0.1)
+	ax.plot([pose[0]-r*np.cos(pose[3]), pose[0]+r*np.cos(pose[3])],
+			 [pose[1]-r*np.sin(pose[3]), pose[1]+r*np.sin(pose[3])],
+			 [pose[2], pose[2]], '--', linewidth=1, color='b')
+	ax.plot([pose[0]-r*np.cos(pose[3]+np.pi/2), pose[0]+r*np.cos(pose[3]+np.pi/2)],
+		     [pose[1]-r*np.sin(pose[3]+np.pi/2), pose[1]+r*np.sin(pose[3]+np.pi/2)],
+		     [pose[2], pose[2]], '--', linewidth=1, color='b')
+	ax.scatter(pose[0], pose[1], pose[2], marker='^')
+	ax.quiver(pose[0], pose[1], pose[2], np.cos(pose[3]), np.sin(pose[3]), 0.0, length=0.2, normalize=True)
+
+
 
 def obstacle_check(pose, gridmap, params):
 	gmap = gridmap
@@ -80,60 +86,63 @@ def obstacle_check(pose, gridmap, params):
 
 
 def left_shift(pose, r):
-	left = [pose[0]+r*np.cos(pose[2]+np.pi/2), pose[1]+r*np.sin(pose[2]+np.pi/2)]
+	yaw = pose[3]
+	left = [pose[0]+r*np.cos(yaw+np.pi/2), pose[1]+r*np.sin(yaw+np.pi/2)]
 	return left
 def right_shift(pose, r):
-	right = [pose[0]-r*np.cos(pose[2]+np.pi/2), pose[1]-r*np.sin(pose[2]+np.pi/2)]
+	yaw = pose[3]
+	right = [pose[0]-r*np.cos(yaw+np.pi/2), pose[1]-r*np.sin(yaw+np.pi/2)]
 	return right
 def back_shift(pose, r):
+	yaw = pose[3]
 	back = pose
-	back[:2] = [pose[0]-r*np.cos(pose[2]), pose[1]-r*np.sin(pose[2])]
+	back[:2] = [pose[0]-r*np.cos(yaw), pose[1]-r*np.sin(yaw)]
 	return back
 def forward_shift(pose, r):
+	yaw = pose[3]
 	forward = pose
-	forward[:2] = [pose[0]+r*np.cos(pose[2]), pose[1]+r*np.sin(pose[2])]
+	forward[:2] = [pose[0]+r*np.cos(yaw), pose[1]+r*np.sin(yaw)]
 	return forward
 def turn_left(pose, yaw=np.pi/2*np.random.uniform(0.2, 0.6)):
-	pose[2] -= yaw
+	pose[3] -= yaw
 	return pose
 def turn_right(pose, yaw=np.pi/2*np.random.uniform(0.2, 0.6)):
-	pose[2] += yaw
+	pose[3] += yaw
 	return pose
 def slow_down(state, params, dv=0.1):
-	if state[3]>params.min_vel:
-		state[3] -= dv
+	if state[4]>params.min_vel:
+		state[4] -= dv
 	return state
-
-def visualize(traj, pose, params):
-	plt.plot(traj[:,0], traj[:,1], 'g')
-	plot_robot(pose, params)
-	plt.legend()
 		
 
 def motion(state, goal, params):
-	# state = [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
+	# state = [x(m), y(m), z(m), yaw(rad), v(m/s), omega(rad/s)]
 	dx = goal[0] - state[0]
 	dy = goal[1] - state[1]
 	goal_yaw = math.atan2(dy, dx)
 	K_theta = 3
-	state[4] = K_theta*math.sin(goal_yaw - state[2]) # omega(rad/s)
-	state[2] += params.dt*state[4] # yaw(rad)
+	state[5] = K_theta*math.sin(goal_yaw - state[3]) # omega(rad/s)
+	state[3] += params.dt*state[5] # yaw(rad)
 
-	dist_to_goal = np.linalg.norm(goal - state[:2])
+	dist_to_goal = np.linalg.norm(goal - state[:3])
 	K_v = 0.1
-	state[3] += K_v*dist_to_goal
-	if state[3] >= params.max_vel: state[3] = params.max_vel
-	if state[3] <= params.min_vel: state[3] = params.min_vel
+	state[4] += K_v*dist_to_goal
+	if state[4] >= params.max_vel: state[4] = params.max_vel
+	if state[4] <= params.min_vel: state[4] = params.min_vel
 
-	dv = params.dt*state[3]
-	state[0] += dv*np.cos(state[2]) # x(m)
-	state[1] += dv*np.sin(state[2]) # y(m)
+	dv = params.dt*state[4]
+	state[0] += dv*np.cos(state[3]) # x(m)
+	state[1] += dv*np.sin(state[3]) # y(m)
+	dist_to_goalZ = np.linalg.norm(goal[2] - state[2])
+	K_z = 0.1
+	state[2] -= K_z * dist_to_goalZ
 
 	return state
 
 def collision_avoidance(state, gridmap, params):
 	pose_grid = gridmap.meters2grid(state[:2])
-	boundary = obstacle_check([pose_grid[0], pose_grid[1], state[2]], gridmap.gmap, params)
+	yaw = state[3]
+	boundary = obstacle_check([pose_grid[0], pose_grid[1], yaw], gridmap.gmap, params)
 	# print(boundary)
 
 	if boundary['right'] or boundary['front']:
@@ -165,9 +174,27 @@ def define_flight_area(initial_pose):
 		print('The robot is not inside the flight area. Define again.')
 	return flight_area_vertices
 
+# def get_3D_waypoints(goal_x, goal_y, params):
+# 	h_min = params.min_height
+# 	h_max = params.max_height
+# 	dh = params.sweep_resolution
+def get_3D_waypoints(goal_x, goal_y, h_min, h_max, dh):
+	height_levels = np.linspace( h_max, h_min, int((h_max-h_min)/dh) )
+	waypoints = np.vstack([goal_x, goal_y, height_levels[0]*np.ones_like(goal_x)])
+	for i in range(1, len(height_levels)):
+		level_x = np.copy(goal_x)
+		level_y = np.copy(goal_y)
+		if i%2 == 1:
+			level_x = np.flip(goal_x)
+			level_y = np.flip(goal_y)
+		level_z = height_levels[i]*np.ones_like(goal_x)
+		waypoints1 = np.vstack([level_x, level_y, level_z])
+		waypoints = np.hstack([waypoints, waypoints1])
+	return waypoints.T # waypoints = [goal_x.T, goal_y.T, height_levels.T]
+
 class Params:
 	def __init__(self):
-		self.numiters = 1000
+		self.numiters = 5000
 		self.animate = 1
 		self.dt = 0.1
 		self.goal_tol = 0.15
@@ -176,71 +203,88 @@ class Params:
 		self.sensor_range_m = 0.3 # m
 		self.time_to_switch_goal = 5.0 # sec
 		self.sweep_resolution = 0.25 # m
+		self.min_height = 0.5 # m
+		self.max_height = 1.5 # m
+
 
 def main():
-	obstacles = [
-		# np.array([[0.7, -0.9], [1.3, -0.9], [1.3, -0.8], [0.7, -0.8]]) + np.array([-1.0, 0.5]),
-		# np.array([[0.7, -0.9], [1.3, -0.9], [1.3, -0.8], [0.7, -0.8]]) + np.array([-1.0, 1.0]),
-		# np.array([[0.7, -0.9], [0.8, -0.9], [0.8, -0.3], [0.7, -0.3]]) + np.array([-1.5, 1.0]),        
-	
-		np.array([[-0.3, -0.4], [0.3, -0.4], [0.3, 0.1], [-0.3, 0.1]]) * 0.5
-	]
-	# initial state = [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
-	state = np.array([0, 0.2, np.pi/2, 0.0, 0.0])
-	traj = state[:2]
 	params = Params()
+
+	# initial state = [x(m), y(m), z(m), yaw(rad), v(m/s), omega(rad/s)]
+	state = np.array([0, 0.2, params.max_height, np.pi/2, 0.0, 0.0])
+	traj = state[:3]
+	
 	plt.figure(figsize=(10,10))
 	flight_area_vertices = define_flight_area(state[:2])
 	# flight_area_vertices = np.array([[-1, -1], [-0.3, -1], [-0.3, -0.4], [0.3, -0.4], [0.3, -1], [1,-1], [1,1], [-1,1]])
 	gridmap = GridMap(flight_area_vertices, state[:2])
-	gridmap.add_obstacles_to_grid_map(obstacles)
 
 	ox = flight_area_vertices[:,0].tolist() + [flight_area_vertices[0,0]]
 	oy = flight_area_vertices[:,1].tolist() + [flight_area_vertices[0,1]]
 	reso = params.sweep_resolution
-	goal_x, goal_y = planning(ox, oy, reso)
+	goal_x2D, goal_y2D = planning(ox, oy, reso)
+
+	waypoints = get_3D_waypoints(goal_x2D, goal_y2D, params.min_height, params.max_height, params.sweep_resolution/2.)
+	goal_x = waypoints[:,0]
+	goal_y = waypoints[:,1]
+	goal_z = waypoints[:,2]
 
 	# goal = [x, y], m
 	goali = 0
-	goal = [goal_x[goali], goal_y[goali]]
+	goal = [goal_x[goali], goal_y[goali], goal_z[goali]]
 	t_prev_goal = time.time()
 
-	gridmap.draw_map(obstacles)
-
+	fig = plt.figure(figsize=(10,10))
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('X, [m]')
+	ax.set_ylabel('Y, [m]')
+	ax.set_zlabel('Z, [m]')
+	ax.set_xlim([-2.5, 2.5])
+	ax.set_ylim([-2.5, 2.5])
+	ax.set_zlim([0.0, 3.0])
 	# while True:
-	for _ in range(params.numiters):
+	for _ in tqdm( range(params.numiters) ):
 		state = motion(state, goal, params)
 
 		state = collision_avoidance(state, gridmap, params)
 
-		goal_dist = np.linalg.norm(goal - state[:2])
+		goal_dist = np.linalg.norm(goal - state[:3])
 		# print('Distance to goal %.2f [m]:' %goal_dist)
 		t_current = time.time()
 		if goal_dist < params.goal_tol or (t_current - t_prev_goal) > params.time_to_switch_goal: # goal is reached
-		    print('Switching to the next goal.')
-		    print('Time from the previous reached goal:', t_current - t_prev_goal)
+		    # print('Switching to the next goal.')
+		    # print('Time from the previous reached goal:', t_current - t_prev_goal)
 		    if goali < len(goal_x) - 1:
 		    	goali += 1
 		    else:
 		    	break
 		    t_prev_goal = time.time()
-		    goal = [goal_x[goali], goal_y[goali]]
+		    goal = [goal_x[goali], goal_y[goali], goal_z[goali]]
 
 
-		traj = np.vstack([traj, state[:2]])
+		traj = np.vstack([traj, state[:3]])
 		
 		if params.animate:
 			plt.cla()
-			gridmap.draw_map(obstacles)
-			plt.plot(goal_x, goal_y)
-			plt.plot(goal[0], goal[1], 'ro', markersize=10, label='Goal position', zorder=20)
-			visualize(traj, state, params)
+			ax.plot(goal_x, goal_y, goal_z, ':')
+			ax.scatter(goal[0], goal[1], goal[2], label='Goal position', zorder=20)
+			ax.plot(traj[:,0], traj[:,1], traj[:,2], linewidth=3, color='g')
+			plot_robot(ax, state, params)
+			plt.legend()
 			plt.pause(0.1)
 
 	print('Mission is complete!')
-	plt.plot(goal_x, goal_y)
-	visualize(traj, state, params)
-	plt.show()
+	plt.cla()
+	ax.plot(goal_x, goal_y, goal_z, ':')
+	ax.scatter(goal[0], goal[1], goal[2], label='Goal position', zorder=20)
+	ax.plot(traj[:,0], traj[:,1], traj[:,2], linewidth=3, color='g')
+	plot_robot(ax, state, params)
+	plt.legend()
+	plt.pause(0.1)
+	plt.draw()
+	input('Hit Enter to close all figures')
+	plt.close('all')
+
 
 if __name__ == '__main__':
 	try:
