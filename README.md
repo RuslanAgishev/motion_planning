@@ -45,7 +45,7 @@ python python_src/exploration/random_walk/main.py
 
 - Coverage path planning for unknown map exploration. Robot's kinematics is taken into account in velocity motion model.
 ```bash
-python python_src/exploration/coverage_path_planning/main.py
+python3 python_src/exploration/coverage_path_planning/main.py
 ```
 
 - Mapping of the unknown environment using one or swarm of robots equipped with 4 ranger sensors. Localization data and scans are given in csv-files.
