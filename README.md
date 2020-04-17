@@ -59,6 +59,7 @@ Take a look at the [package](https://github.com/RuslanAgishev/adaptive_swarm "RR
 for implementation details. There you will find how to apply a layered planner algorithm for a swarm of
 nano quadrotors.
  
+ 
 ### Mapping and Exploration
 
 Exploration of the environment with unknown obstacles location. Random walk algorithm implementation for a mobile robot
@@ -77,11 +78,12 @@ python python_src/exploration/coverage_path_planning/main3D.py
 ```
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/coverage_path_planning/cpp_3D_view.png" width="500"/>
 
+
 ### Mapping with a group of robots
 
 Mapping of an unknown environment using one or swarm of robots equipped with 4 ranger sensors.
 Here we assume that robots localization data is provided
-(prerecorded in csv files [here](https://github.com/RuslanAgishev/motion_planning/tree/master/python_src/mapping/csvs))..
+(prerecorded in csv files [here](https://github.com/RuslanAgishev/motion_planning/tree/master/python_src/mapping/csvs)).
 The occupancy grid is constructed from multiranger pointcloud data
 using [Bresenham](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
 raytracing algorithm.
