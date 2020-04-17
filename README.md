@@ -29,14 +29,14 @@ In order to get familiar with the Artificial Potential Filds
 jupyter-notebook python_src/adaptive_formation/GradientBasedPlanning.ipynb
 ```
 
-- Real time potential fields-based obstacle avoidance method for robots formations with moving or static obstacles.
+Real time potential fields-based obstacle avoidance method for robots formations with moving or static obstacles.
 ```bash
 python python_src/adaptive_formation/gradient_interactive.py
 ```
 
 ### [RRT](http://lavalle.pl/rrt/)
 
-- Road map and path construction with Rapidly exploring Random Tree (RRT) algorithm:
+Road map and path construction with Rapidly exploring Random Tree (RRT) algorithm:
 ```bash
 python python_src/rrts/main_rrt2D.py
 ```
@@ -51,16 +51,18 @@ The algorithm is provided not only for an ego-vechicle but also for a group of r
 
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner1_traj.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner4_traj.png" width="400"/>
 
-- Multi-layered planner for formation of robots navigation based on RRT+APF algorithms. Take a look on the [package](https://github.com/RuslanAgishev/adaptive_swarm "RRT+APF layered planner")
- for more details: 
+Multi-layered planner for formation of robots navigation based on RRT+APF algorithms: 
 ```bash
 python python_src/layered_planner/main_rrt_gradient.py
 ```
-
+Take a look at the [package](https://github.com/RuslanAgishev/adaptive_swarm "RRT+APF layered planner")
+for implementation details. There you will find how to apply a layered planner algorithm for a swarm of
+nano quadrotors.
+ 
 ### Mapping and Exploration
 
-- Exploration of the environment with inknown obstacles location. Random walk algorithm implementation for a mobile robot
-equipped with 4 ranger sensors (front, back, left and right) for obstacles detection.
+Exploration of the environment with unknown obstacles location. Random walk algorithm implementation for a mobile robot
+equipped with 4 ranger sensors (front, back, left and right) for obstacles detection. An example of a robot with similar sensors setup could a Crazyflie drone with a [multiranger](https://www.bitcraze.io/products/multi-ranger-deck/) deck mounted.
 ```bash
 python python_src/exploration/random_goals_following/main.py
 ```
@@ -69,10 +71,23 @@ python python_src/exploration/random_walk/main.py
 ```
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/autonomous_exploration.gif" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/exploration/random_walk.png" width="400"/>
 
-- Coverage path planning for unknown map exploration. Robot's kinematics is taken into account in velocity motion model.
+Coverage path planning for unknown map exploration. Robot's kinematics is taken into account in velocity motion model.
 ```bash
-python3 python_src/exploration/coverage_path_planning/main.py
+python3 python_src/exploration/coverage_path_planning/main3D.py
+```
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/coverage_path_planning/cpp_3D_view.png" width="500"/>
+
+### Mapping with a group of robots
+
+Mapping of an unknown environment using one or swarm of robots equipped with 4 ranger sensors.
+Here we assume that robots localization data is provided
+(prerecorded in csv files [here](https://github.com/RuslanAgishev/motion_planning/tree/master/python_src/mapping/csvs))..
+The occupancy grid is constructed from multiranger pointcloud data
+using [Bresenham](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
+raytracing algorithm.
+
+```python
+python python_src/mapping/2robots_occupancy_grid.py
 ```
 
-- Mapping of the unknown environment using one or swarm of robots equipped with 4 ranger sensors. Localization data and scans are given in csv-files.
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/mapping/2_drones_multiranger_map.png" width="400"/>
