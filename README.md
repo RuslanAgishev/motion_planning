@@ -73,7 +73,7 @@ python python_src/exploration/random_walk/main.py
 
 Coverage path planning for unknown map exploration. Robot's kinematics is taken into account in velocity motion model.
 ```bash
-python3 python_src/exploration/coverage_path_planning/main3D.py
+python python_src/exploration/coverage_path_planning/main3D.py
 ```
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/coverage_path_planning/cpp_3D_view.png" width="500"/>
 
