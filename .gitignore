@@ -1,0 +1,8 @@
+# cache
+__pycache__
+.ipynb_checkpoints
+
+# large files
+*.avi
+*.mp4
+*.mkv
