@@ -15,17 +15,14 @@ run.m
 
 ## Python
 
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner4_traj.png" width="500"/>
-
 Python code for several path planning algorithms is located inside
 [python_src](https://github.com/RuslanAgishev/motion_planning/tree/master/python_src) folder.
 Let's go through a couple of examples.
 
-### APF
+### [APF](https://cs.stanford.edu/group/manips/publications/pdfs/Khatib_1986_IJRR.pdf)
 
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/gradient_route.jpg" width="400"/>
-In order to get familiar with the
-[Artificial Potential Filds](https://cs.stanford.edu/group/manips/publications/pdfs/Khatib_1986_IJRR.pdf)
+In order to get familiar with the Artificial Potential Filds
 (APF) algorithm:
 
 ```bash
@@ -36,6 +33,9 @@ jupyter-notebook python_src/adaptive_formation/GradientBasedPlanning.ipynb
 ```bash
 python python_src/adaptive_formation/gradient_interactive.py
 ```
+
+### [RRT](http://lavalle.pl/rrt/)
+
 - Road map and path construction with Rapidly exploring Random Tree (RRT) algorithm:
 ```bash
 python python_src/rrts/main_rrt2D.py
@@ -44,11 +44,21 @@ in 3D environment:
 ```bash
 python python_src/rrts/3D/rrt3D.py
 ```
+
+### Layered planner (RRT+APF)
+An example of layered planner with RRT as a global path constructor and APF is responsible for local trajectory creation.
+The algorithm is provided not only for an ego-vechicle but also for a group of robots.
+
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner1_traj.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/layered_planner4_traj.png" width="400"/>
+
 - Multi-layered planner for formation of robots navigation based on RRT+APF algorithms. Take a look on the [package](https://github.com/RuslanAgishev/adaptive_swarm "RRT+APF layered planner")
  for more details: 
 ```bash
 python python_src/layered_planner/main_rrt_gradient.py
 ```
+
+### Mapping and Exploration
+
 - Exploration of the environment with inknown obstacles location. Random walk algorithm implementation for a mobile robot
 equipped with 4 ranger sensors (front, back, left and right) for obstacles detection.
 ```bash
