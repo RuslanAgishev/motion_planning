@@ -60,8 +60,7 @@ for implementation details. There you will find how to apply a layered planner a
 nano quadrotors.
  
  
-### Mapping and Exploration
-
+### Coverage Path Planning
 Exploration of the environment with unknown obstacles location. Random walk algorithm implementation for a mobile robot
 equipped with 4 ranger sensors (front, back, left and right) for obstacles detection. An example of a robot with similar sensors setup could a Crazyflie drone with a [multiranger](https://www.bitcraze.io/products/multi-ranger-deck/) deck mounted.
 ```bash
