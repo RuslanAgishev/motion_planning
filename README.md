@@ -1,6 +1,6 @@
 # Motion Planning
 
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt3D.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_path.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
 
 ## MATLAB
 
@@ -44,6 +44,7 @@ in 3D environment:
 ```bash
 python python_src/rrts/3D/rrt3D.py
 ```
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_short_path1.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt3D.png" width="400"/>
 
 ### Layered planner (RRT+APF)
 An example of layered planner with RRT as a global path constructor and APF is responsible for local trajectory creation.
