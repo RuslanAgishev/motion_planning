@@ -13,11 +13,13 @@ In order to launch the algorithms simply execute from your Matlab command prompt
 run.m
 ```
 
+
 ## Python
 
 Python code for several path planning algorithms is located inside
 [python_src](https://github.com/RuslanAgishev/motion_planning/tree/master/python_src) folder.
 Let's go through a couple of examples.
+
 
 ### [APF](https://cs.stanford.edu/group/manips/publications/pdfs/Khatib_1986_IJRR.pdf)
 
@@ -34,6 +36,7 @@ Real time potential fields-based obstacle avoidance method for robots formations
 python python_src/adaptive_formation/gradient_interactive.py
 ```
 
+
 ### [RRT](http://lavalle.pl/rrt/)
 
 Road map and path construction with Rapidly exploring Random Tree (RRT) algorithm:
@@ -45,6 +48,9 @@ in 3D environment:
 python python_src/rrts/3D/rrt3D.py
 ```
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_short_path1.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt3D.png" width="400"/>
+
+Here the RRT nodes and edges are depicted in blue, the retrieved path out of the tree is green, while the orange curve is a shortened trajectory .
+
 
 ### Layered planner (RRT+APF)
 An example of layered planner with RRT as a global path constructor and APF is responsible for local trajectory creation.
