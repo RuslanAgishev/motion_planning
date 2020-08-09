@@ -99,3 +99,6 @@ python python_src/mapping/2robots_occupancy_grid.py
 ```
 
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/mapping/2_drones_multiranger_map.png" width="400"/>
+
+### License <a name="license"></a>
+Project is distributed under [MIT License](https://github.com/RuslanAgishev/motion_planning/blob/master/LICENSE)
