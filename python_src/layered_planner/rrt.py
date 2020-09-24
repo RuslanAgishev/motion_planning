@@ -79,7 +79,7 @@ def rrt_path(obstacles, xy_start, xy_goal, params):
     # RRT algorithm
     start_time = time.time()
     iters = 0
-    print 'Configuration space sampling started ...'
+    print('Configuration space sampling started ...')
     while not nearGoal: # and iters < maxiters:
         # Sample point
         rnd = random()
@@ -142,7 +142,7 @@ def rrt_path(obstacles, xy_start, xy_goal, params):
 
             end_time = time.time()
             nearGoal = True
-            print 'RRT is constructed after %.2f seconds:' % (end_time - start_time)
+            print('RRT is constructed after %.2f seconds:' % (end_time - start_time))
 
         iters += 1
 
@@ -150,7 +150,7 @@ def rrt_path(obstacles, xy_start, xy_goal, params):
     # print 'RRT length: ', len(rrt)
 
     # Path construction from RRT:
-    print 'Retriving the path from RRT...'
+    print('Retriving the path from RRT...')
     i = len(rrt) - 1
     while True:
         i = rrt[i].iPrev

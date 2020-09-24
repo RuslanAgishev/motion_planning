@@ -29,7 +29,7 @@ def draw_map(obstacles, params):
 
 class RRT_Params:
     def __init__(self):
-        self.animate = 1 # show RRT construction, set 0 to reduce time of the RRT algorithm
+        self.animate = 0 # show RRT construction, set 0 to reduce time of the RRT algorithm
         self.visualize = 1 # show constructed paths at the end of the RRT and path smoothing algorithms
         self.maxiters = 5000 # max number of samples to build the RRT
         self.goal_prob = 0.05 # with probability goal_prob, sample the goal
@@ -67,10 +67,8 @@ plt.legend()
 
 P = rrt_path(obstacles, xy_start, xy_goal, params)
 plt.plot( P[:,0], P[:,1], color='green', linewidth=5, label='Path from RRT' )
-print 'Path smoothing...'
 P_smooth = SmoothPath(P, obstacles, smoothiters=100)
 plt.plot(P_smooth[:,0], P_smooth[:,1], linewidth=5, color='orange', label='Shortened path')
-
 
 # TODO: setpoints from via-waypoints
 V = 0.3

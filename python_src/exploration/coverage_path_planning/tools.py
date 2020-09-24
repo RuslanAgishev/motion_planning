@@ -35,7 +35,7 @@ def define_polygon(num_pts=4):
 
 	    ph = plt.fill(pts[:, 0], pts[:, 1], 'y', lw=2)
 
-	    tellme('Happy? Key click for yes, mouse click for no')
+	    tellme('Happy? Press any key for YES, mouse click for NO')
 
 	    if plt.waitforbuttonpress():
 	        break

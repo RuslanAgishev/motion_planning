@@ -98,7 +98,7 @@ class Params:
 	def __init__(self):
 		self.simulation_time = 10 # [sec]
 		self.numiters = 5000
-		self.animate = 0
+		self.animate = 1
 		self.vel = 0.5 # [m/s]
 
 

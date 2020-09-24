@@ -134,7 +134,7 @@ if __name__ == '__main__':
     while True: # loop through all the setpoint from global planner trajectory, traj_global
         dist_to_goal = norm(robot1.sp - xy_goal)
         if dist_to_goal < params.goal_tolerance: # [m]
-            print 'Goal is reached'
+            print('Goal is reached')
             break
         if params.moving_obstacles: obstacles = move_obstacles(obstacles, params) # change poses of some obstacles on the map
 
@@ -212,5 +212,5 @@ plt.grid()
 # close windows if Enter-button is pressed
 plt.draw()
 plt.pause(0.1)
-raw_input('Hit Enter to close')
+input('Hit Enter to close')
 plt.close('all')
