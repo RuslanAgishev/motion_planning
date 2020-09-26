@@ -2,18 +2,6 @@
 
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_path.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
 
-## MATLAB
-
-[Computational Motion Planning](https://www.coursera.org/learn/robotics-motion-planning) course from Penn.
-Matlab implementation of the tasks can be found in
-[matlab_src](https://github.com/RuslanAgishev/motion_planning/tree/master/matlab_src) folder.
-Each of the subfolder includes `run.m` script for simulation launching and helper functions.
-In order to launch the algorithms simply execute from your Matlab command prompt:
-```matlab
-run.m
-```
-
-
 ## Python
 
 Python code for several path planning algorithms is located inside
@@ -62,7 +50,7 @@ Multi-layered planner for formation of robots navigation based on RRT+APF algori
 ```bash
 python python_src/layered_planner/main_rrt_gradient.py
 ```
-Take a look at the [package](https://github.com/RuslanAgishev/adaptive_swarm "RRT+APF layered planner")
+Take a look at the [adaptive_swarm](https://github.com/RuslanAgishev/adaptive_swarm "RRT+APF layered planner") package
 for implementation details. There you will find how to apply a layered planner algorithm for a swarm of
 nano quadrotors.
  
@@ -100,5 +88,21 @@ python python_src/mapping/2robots_occupancy_grid.py
 
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/mapping/2_drones_multiranger_map.png" width="400"/>
 
-### License <a name="license"></a>
+## MATLAB
+
+[Computational Motion Planning](https://www.coursera.org/learn/robotics-motion-planning) course from Penn.
+Matlab implementation of the tasks can be found in
+[matlab_src](https://github.com/RuslanAgishev/motion_planning/tree/master/matlab_src) folder.
+Each of the subfolder includes `run.m` script for simulation launching and helper functions.
+In order to launch the algorithms simply execute from your Matlab command prompt:
+```matlab
+run.m
+```
+
+## Reference
+- [Robotics: Computational Motion Planning by Penn](https://www.coursera.org/learn/robotics-motion-planning)
+- [ColumbiaX Robotics](https://www.edx.org/course/robotics-2)
+- [AtsushiSakai/PythonRobotic](https://github.com/AtsushiSakai/PythonRobotics)
+
+## License <a name="license"></a>
 Project is distributed under [MIT License](https://github.com/RuslanAgishev/motion_planning/blob/master/LICENSE)
