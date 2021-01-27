@@ -1,6 +1,8 @@
 # Motion Planning
 
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_path.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/bugtrap_4drones.gif" width="600"/>
+
+<!-- <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_path.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/> -->
 
 ## Python
 
@@ -11,7 +13,8 @@ Let's go through a couple of examples.
 
 ### [APF](https://cs.stanford.edu/group/manips/publications/pdfs/Khatib_1986_IJRR.pdf)
 
-<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/gradient_route.jpg" width="400"/>
+<img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/gradient_route.jpg" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/>
+
 In order to get familiar with the Artificial Potential Filds
 (APF) algorithm:
 
