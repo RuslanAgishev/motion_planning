@@ -109,3 +109,17 @@ run.m
 
 ## License <a name="license"></a>
 Project is distributed under [MIT License](https://github.com/RuslanAgishev/motion_planning/blob/master/LICENSE)
+
+## Citation
+Feel free to cite the package, if you find it useful for your research.
+
+```
+@software{Agishev_Robot_path_planning_2019,
+author = {Agishev, Ruslan},
+month = {9},
+title = {{Robot path planning, mapping and exploration algorithms}},
+url = {https://github.com/RuslanAgishev/motion_planning},
+version = {0.0.1},
+year = {2019}
+}
+```
