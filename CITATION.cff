@@ -6,5 +6,5 @@ authors:
   orcid: "https://orcid.org/0000-0002-9169-2684"
 title: "Robot path planning, mapping and exploration algorithms"
 version: 0.0.1
-date-released: 2017-09-23
+date-released: 2019-09-23
 url: "https://github.com/RuslanAgishev/motion_planning"
