@@ -1,5 +1,6 @@
 # Motion Planning
 
+[![Thesis](http://img.shields.io/badge/Msc-Thesis-green.svg?style=plastic)](https://github.com/RuslanAgishev/adaptive_swarm/blob/90d7066fce9917577bab0a8fa40fb93e4ee564f8/MSc_Thesis_Skoltech.pdf)
 [![ToH](http://img.shields.io/badge/IEEE-ToH2019-blue.svg?style=plastic)](https://ieeexplore.ieee.org/document/8758191)
 [![CHI](http://img.shields.io/badge/iHDI2019-workshop-critical.svg?style=plastic)](https://hal.science/hal-02128383/document)
 
@@ -116,7 +117,7 @@ Project is distributed under [MIT License](https://github.com/RuslanAgishev/moti
 ## Citation
 Feel free to cite the papers, if you find the package useful for your research.
 
-```
+```bibtex
 @article{tsykunov2019swarmtouch,
   title={Swarmtouch: Guiding a swarm of micro-quadrotors with impedance control using a wearable tactile interface},
   author={Tsykunov, Evgeny and Agishev, Ruslan and Ibrahimov, Roman and Labazanova, Luiza and Tleugazy, Akerke and Tsetserukou, Dzmitry},
