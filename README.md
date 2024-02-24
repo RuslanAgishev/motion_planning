@@ -1,5 +1,8 @@
 # Motion Planning
 
+[![ToH](http://img.shields.io/badge/IEEE-ToH2019-blue.svg?style=plastic)](https://ieeexplore.ieee.org/document/8758191)
+[![CHI](http://img.shields.io/badge/iHDI2019-workshop-critical.svg?style=plastic)](https://hal.science/hal-02128383/document)
+
 <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/layered_planner/bugtrap_4drones.gif" width="600"/>
 
 <!-- <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/rrt/rrt_path.png" width="400"/> <img src="https://github.com/RuslanAgishev/motion_planning/blob/master/figures/apf/repulsive_potential.jpg" width="400"/> -->
@@ -111,15 +114,31 @@ run.m
 Project is distributed under [MIT License](https://github.com/RuslanAgishev/motion_planning/blob/master/LICENSE)
 
 ## Citation
-Feel free to cite the package, if you find it useful for your research.
+Feel free to cite the papers, if you find the package useful for your research.
 
 ```
-@software{Agishev_Robot_path_planning_2019,
-author = {Agishev, Ruslan},
-month = {9},
-title = {{Robot path planning, mapping and exploration algorithms}},
-url = {https://github.com/RuslanAgishev/motion_planning},
-version = {0.0.1},
-year = {2019}
+@article{tsykunov2019swarmtouch,
+  title={Swarmtouch: Guiding a swarm of micro-quadrotors with impedance control using a wearable tactile interface},
+  author={Tsykunov, Evgeny and Agishev, Ruslan and Ibrahimov, Roman and Labazanova, Luiza and Tleugazy, Akerke and Tsetserukou, Dzmitry},
+  journal={IEEE transactions on haptics},
+  volume={12},
+  number={3},
+  pages={363--374},
+  year={2019},
+  publisher={IEEE}
+}
+@inproceedings{agishev:hal-02128383,
+  TITLE = {{Tactile Interaction of Human with Swarm of Nano-Quadrotors augmented with Adaptive Obstacle Avoidance}},
+  AUTHOR = {Agishev, Ruslan and Tsykunov, Evgeny and Labazanova, Luiza and Tleugazy, Akerke and Tsetserukou, Dzmitry},
+  URL = {https://hal.science/hal-02128383},
+  BOOKTITLE = {{1st International Workshop on Human-Drone Interaction}},
+  ADDRESS = {Glasgow, United Kingdom},
+  ORGANIZATION = {{Ecole Nationale de l'Aviation Civile [ENAC]}},
+  YEAR = {2019},
+  MONTH = May,
+  KEYWORDS = {Human ; robot interaction ; tactile display ; wearable computers ; robot formation motion planning ; impedance control ; potential fields},
+  PDF = {https://hal.science/hal-02128383/file/HDI_2019_paper_14.pdf},
+  HAL_ID = {hal-02128383},
+  HAL_VERSION = {v1},
 }
 ```
