@@ -143,3 +143,6 @@ Feel free to cite the papers, if you find the package useful for your research.
   HAL_VERSION = {v1},
 }
 ```
+
+[<img src="https://api.gitsponsors.com/api/badge/img?id=164224571" height="20">](https://api.gitsponsors.com/api/badge/link?p=aKmUVLMYYkn+04xeNSS7ESMQ+mGUhRW7N0Qom7W+vOB56dwsFtOnXXfINNhX0/4D)
+
